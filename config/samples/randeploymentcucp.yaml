@@ -1,0 +1,53 @@
+apiVersion: workload.nephio.org/v1alpha1
+kind: RANDeployment
+metadata: 
+  name: oai-ran-cu-cp
+  namespace: oai-ran
+spec:
+  ranNfType: CU-CP
+  params3gpp:
+    physicalCellId: 0
+    cellIdentity : '12345678L'
+    plmn:
+      mcc: '001'
+      mnc: '01'
+      mncLength: 2
+    tac: '1'
+    nssaiList:
+    - sst: '1'
+      sd: '0xffffff'
+  nfLatency: 1
+  capacity:
+    maxDownlinkThroughput: 100M
+    maxUplinkThroughput: 1M
+  interfaces:
+  - name: e1
+    ipv4:
+      address: 192.168.18.12/24
+      gateway: 192.168.18.12
+    vlanID: 3
+  - name: n2
+    ipv4:
+      address: 172.21.6.98/22
+      gateway: 172.21.6.98
+    vlanID: 4
+  - name: f1c
+    ipv4:
+      address: 172.21.16.92/22
+      gateway: 172.21.16.92
+    vlanID: 5
+  networkInstances:
+  - name: vpc-ran
+    interfaces:
+    - n2
+  - name: vpc-e1
+    interfaces:
+    - e1
+  - name: vpc-f1c
+    interfaces:
+    - f1c
+  configRefs:
+  - name: amf-regional-gnb-edge02
+    namespace: oai-ran
+    apiVersion: ref.nephio.org/v1alpha1
+    kind: Config

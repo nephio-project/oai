@@ -1,0 +1,27 @@
+apiVersion: ref.nephio.org/v1alpha1
+kind: Config
+metadata:
+  name: amf-regional-gnb-edge02
+  namespace: oai-ran
+spec:
+  config:
+    apiVersion: workload.nephio.org/v1alpha1
+    kind: AMFDeployment
+    metadata:
+      name: amf-regional
+      namespace: oaicp
+    spec:
+      capacity:
+        maxDownlinkThroughput: "0"
+        maxSubscribers: 64
+        maxUplinkThroughput: "0"
+      interfaces:
+      - name: n2
+        ipv4:
+          address: 172.21.6.94/24
+          gateway: 172.21.6.94
+        vlanID: 4
+      networkInstances:
+      - name: vpc-ran
+        interfaces:
+        - n2

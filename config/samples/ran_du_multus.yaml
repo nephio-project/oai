@@ -1,0 +1,8 @@
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: oai-ran-du-f1
+  namespace: oai-ran
+spec:
+  config: "{ \"cniVersion\": \"0.3.1\", \"plugins\":[{\"capabilities\":{\"ips\":true},\"type\": \"macvlan\", \"master\":\"ens3\", \"mode\": \"bridge\", \"ipam\": { \"type\": \"static\", \"addresses\": [ { \"address\":\"172.21.16.100/22\" } ] } }]}" 
+

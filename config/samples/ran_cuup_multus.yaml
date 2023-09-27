@@ -1,0 +1,29 @@
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: oai-ran-cu-up-e1
+  namespace: oai-ran
+spec:
+  config: "{ \"cniVersion\": \"0.3.1\", \"plugins\":[{\"capabilities\":{\"ips\":true},\"type\": \"macvlan\", \"master\":\"ens3\", \"mode\": \"bridge\", \"ipam\": { \"type\": \"static\", \"addresses\": [ { \"address\":\"192.168.18.13/24\" } ] } }]}" 
+
+---
+
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: oai-ran-cu-up-n3
+  namespace: oai-ran
+spec:
+  config: "{ \"cniVersion\": \"0.3.1\", \"plugins\":[{\"capabilities\":{\"ips\":true},\"type\": \"macvlan\", \"master\":\"ens3\", \"mode\": \"bridge\", \"ipam\": { \"type\": \"static\", \"addresses\": [ { \"address\":\"172.21.8.97/22\" } ] } }]}" 
+
+---
+
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: oai-ran-cu-up-f1u
+  namespace: oai-ran
+spec:
+  config: "{ \"cniVersion\": \"0.3.1\", \"plugins\":[{\"capabilities\":{\"ips\":true},\"type\": \"macvlan\", \"master\":\"ens3\", \"mode\": \"bridge\", \"ipam\": { \"type\": \"static\", \"addresses\": [ { \"address\":\"172.21.16.93/22\" } ] } }]}" 
+
+
