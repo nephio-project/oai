@@ -47,8 +47,7 @@ type networkAttachmentDefinitionNetwork struct {
 }
 
 func CreateNetworkAttachmentDefinitionNetworksConfigs(templateName string, interfaceConfigs map[string][]workloadnephioorgv1alpha1.InterfaceConfig) (string, error) {
-	// TODO(tliron): we should be using JSON marshalling instead of constructing JSON as a string (and unit tests should do the same)
-
+	//TODO: will be removed and common functions defined for free5gc can be used when using NFdeploy
 	interfaceNames := make([]string, 0, len(interfaceConfigs))
 	for interfaceName := range interfaceConfigs {
 		interfaceNames = append(interfaceNames, interfaceName)
@@ -85,6 +84,7 @@ func CreateNetworkAttachmentDefinitionName(templateName string, suffix string) s
 
 // Gets a Deployment resource and checks that the NetworkAttachmentDefinitions specified in its
 // `k8s.v1.cni.cncf.io/networks` annotation exist in the same namespace.
+// TODO: will be removed and common functions defined for free5gc can be used when using NFdeploy
 func ValidateNetworkAttachmentDefinitions(ctx context.Context, c client.Client, log logr.Logger, kind string, deployment *appsv1.Deployment) bool {
 	networksJson, ok := deployment.Spec.Template.Annotations[NetworksAnnotation]
 	if !ok {

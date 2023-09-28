@@ -17,18 +17,14 @@ limitations under the License.
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
 
-	nephiov1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
-	configref "github.com/nephio-project/api/references/v1alpha1"
-	free5gccontrollers "github.com/nephio-project/free5gc/controllers"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	workloadnephioorgv1alpha1 "workload.nephio.org/ran_deployment/api/v1alpha1"
 )
 
+// TODO: will be removed and common functions defined for free5gc can be used when using NFdeploy
 func GetInterfaceConfigs(interfaceConfigs []workloadnephioorgv1alpha1.InterfaceConfig, interfaceName string) []workloadnephioorgv1alpha1.InterfaceConfig {
 	var selectedInterfaceConfigs []workloadnephioorgv1alpha1.InterfaceConfig
 
@@ -41,6 +37,7 @@ func GetInterfaceConfigs(interfaceConfigs []workloadnephioorgv1alpha1.InterfaceC
 	return selectedInterfaceConfigs
 }
 
+// TODO: will be removed and common functions defined for free5gc can be used when using NFdeploy
 func GetFirstInterfaceConfig(interfaceConfigs []workloadnephioorgv1alpha1.InterfaceConfig, interfaceName string) (*workloadnephioorgv1alpha1.InterfaceConfig, error) {
 	for _, interfaceConfig := range interfaceConfigs {
 		if interfaceConfig.Name == interfaceName {
@@ -51,6 +48,7 @@ func GetFirstInterfaceConfig(interfaceConfigs []workloadnephioorgv1alpha1.Interf
 	return nil, fmt.Errorf("Interface %q not found", interfaceName)
 }
 
+// TODO: will be removed and common functions defined for free5gc can be used when using NFdeploy
 func GetFirstInterfaceConfigIPv4(interfaceConfigs []workloadnephioorgv1alpha1.InterfaceConfig, interfaceName string, quotes bool) (string, error) {
 	interfaceConfig, err := GetFirstInterfaceConfig(interfaceConfigs, interfaceName)
 	if err != nil {
@@ -67,69 +65,4 @@ func GetFirstInterfaceConfigIPv4(interfaceConfigs []workloadnephioorgv1alpha1.In
 	} else {
 		return ip.String(), nil
 	}
-}
-
-func GetAmfIpFromConfigRef(configRefInstances []*configref.Config, gvk schema.GroupVersionKind) (string, error) {
-
-	var extractedIp = ""
-	for _, ref := range configRefInstances {
-		var b []byte
-		if ref.Spec.Config.Object == nil {
-			b = ref.Spec.Config.Raw
-		} else {
-			if ref.Spec.Config.Object.GetObjectKind().GroupVersionKind() == gvk {
-				var err error
-				if b, err = json.Marshal(ref.Spec.Config.Object); err != nil {
-					return extractedIp, err
-				}
-			} else {
-				continue
-			}
-		}
-		amfDeployment := &nephiov1alpha1.AMFDeployment{}
-		if err := json.Unmarshal(b, amfDeployment); err != nil {
-			return extractedIp, err
-		} else {
-			extractedIp, err = free5gccontrollers.GetFirstInterfaceConfigIPv4(amfDeployment.Spec.Interfaces, "n2")
-			if err != nil {
-				extractedIp = ""
-				return extractedIp, nil
-			}
-		}
-	}
-
-	return extractedIp, nil
-}
-
-func GetCuCpIpFromConfigRef(configRefInstances []*configref.Config, gvk schema.GroupVersionKind, interfaceName string) (string, error) {
-
-	var extractedIp = ""
-	for _, ref := range configRefInstances {
-		var b []byte
-		if ref.Spec.Config.Object == nil {
-			b = ref.Spec.Config.Raw
-		} else {
-			if ref.Spec.Config.Object.GetObjectKind().GroupVersionKind() == gvk {
-				var err error
-				if b, err = json.Marshal(ref.Spec.Config.Object); err != nil {
-					return extractedIp, err
-				}
-			} else {
-				continue
-			}
-		}
-		ranDeployment := &workloadnephioorgv1alpha1.RANDeployment{}
-		if err := json.Unmarshal(b, ranDeployment); err != nil {
-			return extractedIp, err
-		} else {
-
-			extractedIp, err = GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, interfaceName, false)
-			if err != nil {
-				extractedIp = ""
-				return extractedIp, err
-			}
-		}
-	}
-
-	return extractedIp, nil
 }
