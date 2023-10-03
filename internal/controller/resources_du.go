@@ -21,7 +21,9 @@ import (
 	"strconv"
 
 	"github.com/go-logr/logr"
+	nephiov1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
 	configref "github.com/nephio-project/api/references/v1alpha1"
+	free5gccontrollers "github.com/nephio-project/free5gc/controllers"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,16 +34,16 @@ type DuResources struct {
 }
 
 func (resource DuResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *workloadnephioorgv1alpha1.RANDeploymentSpec) (string, error) {
-	return CreateNetworkAttachmentDefinitionNetworksConfigs(templateName, map[string][]workloadnephioorgv1alpha1.InterfaceConfig{
-		"f1": GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1-du"),
+	return free5gccontrollers.CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]nephiov1alpha1.InterfaceConfig{
+		"f1": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1-du"),
 	})
 }
 
 func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloadnephioorgv1alpha1.RANDeployment, configInstancesMap map[string]*configref.Config) []*corev1.ConfigMap {
 
-	quotedF1Ip, err := GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1-du", false)
+	quotedF1Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1-du")
 	if err != nil {
-		log.Error(err, "Interface f1c not found in RANDeployment Spec")
+		log.Error(err, "Interface f1-du not found in RANDeployment Spec")
 		return nil
 	}
 
@@ -53,9 +55,9 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloa
 		return nil
 	}
 
-	quotedCuCpIp, err := GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "f1c", false)
+	quotedCuCpIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "f1c")
 	if err != nil {
-		log.Error(err, "AMF IP not found in Config Refs AMFDeployment")
+		log.Error(err, "f1c not found in Config Refs RANDeployment")
 		return nil
 	}
 
@@ -107,7 +109,7 @@ func (resource DuResources) GetDeployment(ranDeployment *workloadnephioorgv1alph
 	}
 
 	podAnnotations := make(map[string]string)
-	podAnnotations[NetworksAnnotation] = networkAttachmentDefinitionNetworks
+	podAnnotations[free5gccontrollers.NetworksAnnotation] = networkAttachmentDefinitionNetworks
 
 	deployment1 := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

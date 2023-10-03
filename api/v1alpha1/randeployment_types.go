@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"reflect"
 
+	v1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -60,15 +61,15 @@ type RANDeploymentSpec struct {
 	RanNfType  `json:"ranNfType"`
 	Params3gpp `json:"params3gpp"`
 	// latency maximum latency tolerated by this RAN NF. This variable will be responsible for latency of this NF
-	NfLatency        int `json:"nfLatency,omitempty"`
-	NFDeploymentSpec `json:",inline" yaml:",inline"`
+	NfLatency                 int `json:"nfLatency,omitempty"`
+	v1alpha1.NFDeploymentSpec `json:",inline" yaml:",inline"`
 }
 
 // RANDeploymentStatus defines the observed state of RANDeployment
 type RANDeploymentStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	NFDeploymentStatus `json:",inline" yaml:",inline"`
+	v1alpha1.NFDeploymentStatus `json:",inline" yaml:",inline"`
 }
 
 //+kubebuilder:object:root=true
@@ -94,16 +95,16 @@ type RANDeploymentList struct {
 
 // Implement NFDeployment interface
 
-func (d *RANDeployment) GetNFDeploymentSpec() *NFDeploymentSpec {
+func (d *RANDeployment) GetNFDeploymentSpec() *v1alpha1.NFDeploymentSpec {
 	return d.Spec.NFDeploymentSpec.DeepCopy()
 }
-func (d *RANDeployment) GetNFDeploymentStatus() *NFDeploymentStatus {
+func (d *RANDeployment) GetNFDeploymentStatus() *v1alpha1.NFDeploymentStatus {
 	return d.Status.NFDeploymentStatus.DeepCopy()
 }
-func (d *RANDeployment) SetNFDeploymentSpec(s *NFDeploymentSpec) {
+func (d *RANDeployment) SetNFDeploymentSpec(s *v1alpha1.NFDeploymentSpec) {
 	s.DeepCopyInto(&d.Spec.NFDeploymentSpec)
 }
-func (d *RANDeployment) SetNFDeploymentStatus(s *NFDeploymentStatus) {
+func (d *RANDeployment) SetNFDeploymentStatus(s *v1alpha1.NFDeploymentStatus) {
 	s.DeepCopyInto(&d.Status.NFDeploymentStatus)
 }
 

@@ -39,13 +39,13 @@ spec:
   networkInstances:
   - name: vpc-ran
     interfaces:
-    - n2
+    - n3
   - name: vpc-e1
     interfaces:
-    - e1
+    - e1-cu-up
   - name: vpc-f1c
     interfaces:
-    - f1c
+    - f1u
   configRefs:
   - name: cucp-gnb-edge01
     namespace: oai-ran
