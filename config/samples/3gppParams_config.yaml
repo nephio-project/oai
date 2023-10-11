@@ -1,0 +1,23 @@
+apiVersion: ref.nephio.org/v1alpha1
+kind: Config
+metadata:
+  name: 3ggp-params
+  namespace: oai-ran
+spec:
+  config:
+    apiVersion: workload.nephio.org/v1alpha1
+    kind: Params3gpp
+    metadata: 
+      name: cucp-3ggp-params
+      namespace: oai-ran
+    spec:
+      physicalCellId: 0
+      cellIdentity : '12345678L'
+      plmn:
+        mcc: '001'
+        mnc: '01'
+        mncLength: 2
+      tac: '1'
+      nssaiList:
+      - sst: '1'
+        sd: '0xffffff'
