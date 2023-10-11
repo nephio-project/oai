@@ -138,6 +138,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/nephio-project/api v1.0.0 h1:uHu2SP2nHpx7B9if0MZrw5BqAKBf2dG2Ssp6bp6R6lY=
 github.com/nephio-project/api v1.0.0/go.mod h1:9w+JbXeyiT3KZrrXab0pzaWtiUk4upvgLzpqOtSmbpI=
+github.com/nephio-project/api v1.0.1-0.20231006162045-9ad2d0db2a8d h1:I8j2xAJWpBpI5b/GOEdANY/9k4ORzmUEd1HuiFDVGi0=
+github.com/nephio-project/api v1.0.1-0.20231006162045-9ad2d0db2a8d/go.mod h1:9w+JbXeyiT3KZrrXab0pzaWtiUk4upvgLzpqOtSmbpI=
 github.com/nephio-project/free5gc v1.0.1 h1:GiKorT9DB/5ZYpi0fwB1QIKzVaeyg65zhs4bKISHjnk=
 github.com/nephio-project/free5gc v1.0.1/go.mod h1:fKJZvoLamFQ8hsOBigbfxnwMsyoyYgMREBUw4oj+a7c=
 github.com/nokia/k8s-ipam v0.0.4-0.20230608184434-0c910788bac7 h1:ZoUMFeP4Hhh35LMvSO4+0+y+lNw0G4fhus15WpOCF8I=

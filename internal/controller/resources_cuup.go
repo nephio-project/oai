@@ -17,7 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	"encoding/json"
 	"strconv"
 
 	"github.com/go-logr/logr"
@@ -27,20 +26,19 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	workloadnephioorgv1alpha1 "workload.nephio.org/ran_deployment/api/v1alpha1"
 )
 
 type CuUpResources struct {
 }
 
-func (resource CuUpResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *workloadnephioorgv1alpha1.RANDeploymentSpec) (string, error) {
+func (resource CuUpResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *nephiov1alpha1.NFDeploymentSpec) (string, error) {
 	return free5gccontrollers.CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]nephiov1alpha1.InterfaceConfig{
 		"e1":  free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "e1-cu-up"),
 		"n3":  free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "n3"),
 		"f1u": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1u"),
 	})
 }
-func (resource CuUpResources) GetDeployment(ranDeployment *workloadnephioorgv1alpha1.RANDeployment) []*appsv1.Deployment {
+func (resource CuUpResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDeployment) []*appsv1.Deployment {
 
 	spec := ranDeployment.Spec
 
@@ -183,7 +181,7 @@ func (resource CuUpResources) GetServiceAccount() []*corev1.ServiceAccount {
 	return []*corev1.ServiceAccount{serviceAccount1}
 }
 
-func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *workloadnephioorgv1alpha1.RANDeployment, configInstancesMap map[string]*configref.Config) []*corev1.ConfigMap {
+func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov1alpha1.NFDeployment, configInstancesMap map[string][]*configref.Config) []*corev1.ConfigMap {
 
 	n3Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "n3")
 	if err != nil {
@@ -209,13 +207,7 @@ func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 
 	quotedF1UIp := strconv.Quote(f1uIp)
 
-	var b []byte
-	ranDeploymentConfigRef := &workloadnephioorgv1alpha1.RANDeployment{}
-	b = configInstancesMap["RANDeployment"].Spec.Config.Raw
-	if err := json.Unmarshal(b, ranDeploymentConfigRef); err != nil {
-		log.Error(err, "Cannot Unmarshal RANDeployment")
-		return nil
-	}
+	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "oai-cucp.nephio.org")
 
 	cuCpIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "e1")
 	if err != nil {

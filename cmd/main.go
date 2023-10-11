@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	runscheme "sigs.k8s.io/controller-runtime/pkg/scheme"
 
+	nfv1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
 	refv1alpha1 "github.com/nephio-project/api/references/v1alpha1"
-	workloadnephioorgv1alpha1 "workload.nephio.org/ran_deployment/api/v1alpha1"
 	"workload.nephio.org/ran_deployment/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
@@ -45,8 +45,6 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(workloadnephioorgv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -93,6 +91,12 @@ func main() {
 
 	schemeBuilder := &runscheme.Builder{GroupVersion: refv1alpha1.GroupVersion}
 	schemeBuilder.Register(&refv1alpha1.Config{}, &refv1alpha1.ConfigList{})
+	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
+		setupLog.Error(err, "Not able to register Config.ref kind")
+	}
+
+	schemeBuilder = &runscheme.Builder{GroupVersion: nfv1alpha1.GroupVersion}
+	schemeBuilder.Register(&nfv1alpha1.NFDeployment{}, &nfv1alpha1.NFDeploymentList{})
 	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
 		setupLog.Error(err, "Not able to register Config.ref kind")
 	}

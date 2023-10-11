@@ -26,7 +26,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	workloadnephioorgv1alpha1 "workload.nephio.org/ran_deployment/api/v1alpha1"
 )
 
 type CuCpResources struct {
@@ -47,7 +46,7 @@ func (resource CuCpResources) GetServiceAccount() []*corev1.ServiceAccount {
 	return []*corev1.ServiceAccount{serviceAccount1}
 }
 
-func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *workloadnephioorgv1alpha1.RANDeployment, configInstancesMap map[string]*configref.Config) []*corev1.ConfigMap {
+func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov1alpha1.NFDeployment, configInstancesMap map[string][]*configref.Config) []*corev1.ConfigMap {
 
 	n2Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "n2")
 	if err != nil {
@@ -73,13 +72,7 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 
 	quotedF1CIp := strconv.Quote(f1cIp)
 
-	var b []byte
-	amfDeployment := &nephiov1alpha1.AMFDeployment{}
-	b = configInstancesMap["AMFDeployment"].Spec.Config.Raw
-	if err := json.Unmarshal(b, amfDeployment); err != nil {
-		log.Error(err, "Cannot Unmarshal AMFDeployment")
-		return nil
-	}
+	amfDeployment := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "oai-amf.nephio.org")
 
 	amfIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(amfDeployment.Spec.Interfaces, "n2")
 	if err != nil {
@@ -89,19 +82,25 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 
 	quotedAmfIp := strconv.Quote(amfIp)
 
+	params3gpp := &Params3gppCrd{}
+	if err := json.Unmarshal(configInstancesMap["Params3gpp"][0].Spec.Config.Raw, params3gpp); err != nil {
+		log.Error(err, "Cannot Unmarshal Params3gpp")
+		return nil
+	}
+
 	templateValues := configurationTemplateValuesForCuCp{
 		E1_IP:           quotedE1Ip,
 		F1C_IP:          quotedF1CIp,
 		N2_IP:           quotedN2Ip,
 		AMF_IP:          quotedAmfIp,
-		TAC:             ranDeployment.Spec.Tac,
-		CELL_ID:         ranDeployment.Spec.CellIdentity,
-		PHY_CELL_ID:     strconv.Itoa(ranDeployment.Spec.PhysicalCellId),
-		PLMN_MCC:        ranDeployment.Spec.Plmn.Mcc,
-		PLMN_MNC:        ranDeployment.Spec.Plmn.Mnc,
-		PLMN_MNC_LENGTH: strconv.Itoa(ranDeployment.Spec.Plmn.MncLength),
-		NSSAI_SST:       ranDeployment.Spec.NssaiList[0].Sst,
-		NSSAI_SD:        ranDeployment.Spec.NssaiList[0].Sd,
+		TAC:             params3gpp.Spec.Tac,
+		CELL_ID:         params3gpp.Spec.CellIdentity,
+		PHY_CELL_ID:     strconv.Itoa(params3gpp.Spec.PhysicalCellId),
+		PLMN_MCC:        params3gpp.Spec.Plmn.Mcc,
+		PLMN_MNC:        params3gpp.Spec.Plmn.Mnc,
+		PLMN_MNC_LENGTH: strconv.Itoa(params3gpp.Spec.Plmn.MncLength),
+		NSSAI_SST:       params3gpp.Spec.NssaiList[0].Sst,
+		NSSAI_SD:        params3gpp.Spec.NssaiList[0].Sd,
 	}
 
 	configuration, err := renderConfigurationTemplateForCuCp(templateValues)
@@ -128,7 +127,7 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 	return []*corev1.ConfigMap{configMap1}
 }
 
-func (resource CuCpResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *workloadnephioorgv1alpha1.RANDeploymentSpec) (string, error) {
+func (resource CuCpResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *nephiov1alpha1.NFDeploymentSpec) (string, error) {
 	return free5gccontrollers.CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]nephiov1alpha1.InterfaceConfig{
 		"e1":  free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "e1"),
 		"n2":  free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "n2"),
@@ -136,7 +135,7 @@ func (resource CuCpResources) createNetworkAttachmentDefinitionNetworks(template
 	})
 }
 
-func (resource CuCpResources) GetDeployment(ranDeployment *workloadnephioorgv1alpha1.RANDeployment) []*appsv1.Deployment {
+func (resource CuCpResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDeployment) []*appsv1.Deployment {
 
 	spec := ranDeployment.Spec
 

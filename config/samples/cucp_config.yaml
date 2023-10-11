@@ -6,24 +6,12 @@ metadata:
 spec:
   config:
     apiVersion: workload.nephio.org/v1alpha1
-    kind: RANDeployment
+    kind: NFDeployment
     metadata: 
       name: oai-ran-cu-cp
       namespace: oai-ran
     spec:
-      ranNfType: CU-CP
-      params3gpp:
-        physicalCellId: 0
-        cellIdentity : '12345678L'
-        plmn:
-          mcc: '001'
-          mnc: '01'
-          mncLength: 2
-        tac: '1'
-        nssaiList:
-        - sst: '1'
-          sd: '0xffffff'
-      nfLatency: 1
+      provider: oai-cucp.nephio.org
       capacity:
         maxDownlinkThroughput: 100M
         maxUplinkThroughput: 1M

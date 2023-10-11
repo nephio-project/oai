@@ -27,19 +27,18 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	workloadnephioorgv1alpha1 "workload.nephio.org/ran_deployment/api/v1alpha1"
 )
 
 type DuResources struct {
 }
 
-func (resource DuResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *workloadnephioorgv1alpha1.RANDeploymentSpec) (string, error) {
+func (resource DuResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *nephiov1alpha1.NFDeploymentSpec) (string, error) {
 	return free5gccontrollers.CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]nephiov1alpha1.InterfaceConfig{
 		"f1": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1-du"),
 	})
 }
 
-func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloadnephioorgv1alpha1.RANDeployment, configInstancesMap map[string]*configref.Config) []*corev1.ConfigMap {
+func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov1alpha1.NFDeployment, configInstancesMap map[string][]*configref.Config) []*corev1.ConfigMap {
 
 	quotedF1Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1-du")
 	if err != nil {
@@ -47,13 +46,7 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloa
 		return nil
 	}
 
-	var b []byte
-	ranDeploymentConfigRef := &workloadnephioorgv1alpha1.RANDeployment{}
-	b = configInstancesMap["RANDeployment"].Spec.Config.Raw
-	if err := json.Unmarshal(b, ranDeploymentConfigRef); err != nil {
-		log.Error(err, "Cannot Unmarshal RANDeployment")
-		return nil
-	}
+	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "oai-cucp.nephio.org")
 
 	quotedCuCpIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "f1c")
 	if err != nil {
@@ -61,18 +54,24 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloa
 		return nil
 	}
 
+	params3gpp := &Params3gppCrd{}
+	if err := json.Unmarshal(configInstancesMap["Params3gpp"][0].Spec.Config.Raw, params3gpp); err != nil {
+		log.Error(err, "Cannot Unmarshal Params3gpp")
+		return nil
+	}
+
 	configMap1 := &corev1.ConfigMap{
 		Data: map[string]string{
-			"nssaiSst":             ranDeployment.Spec.NssaiList[0].Sst,
+			"nssaiSst":             params3gpp.Spec.NssaiList[0].Sst,
 			"timeZone":             "Europe/Paris",
 			"f1IfName":             "f1",
 			"f1cuIpAddress":        quotedCuCpIp,
 			"gnbNgaIfName":         "eth0",
 			"gnbNguIpAddress":      "status.podIP",
-			"mcc":                  ranDeployment.Spec.Mcc,
-			"mnc":                  ranDeployment.Spec.Mnc,
+			"mcc":                  params3gpp.Spec.Plmn.Mcc,
+			"mnc":                  params3gpp.Spec.Plmn.Mnc,
 			"rfSimulator":          "server",
-			"tac":                  ranDeployment.Spec.Tac,
+			"tac":                  params3gpp.Spec.Tac,
 			"amfIpAddress":         "127.0.0.1",
 			"f1duIpAddress":        quotedF1Ip,
 			"gnbNguIfName":         "eth0",
@@ -80,11 +79,11 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloa
 			"mountConfig":          "false",
 			"f1duPort":             "2152",
 			"gnbduName":            "oai-du-rfsim",
-			"mncLength":            strconv.Itoa(ranDeployment.Spec.MncLength),
+			"mncLength":            strconv.Itoa(params3gpp.Spec.Plmn.MncLength),
 			"useAdditionalOptions": "--sa --rfsim --log_config.global_log_options level,nocolor,time",
 			"f1cuPort":             "2152",
 			"gnbNgaIpAddress":      "status.podIP",
-			"nssaiSd0":             ranDeployment.Spec.NssaiList[0].Sd,
+			"nssaiSd0":             params3gpp.Spec.NssaiList[0].Sd,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "oai-gnb-du-configmap",
@@ -98,7 +97,7 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloa
 	return []*corev1.ConfigMap{configMap1}
 }
 
-func (resource DuResources) GetDeployment(ranDeployment *workloadnephioorgv1alpha1.RANDeployment) []*appsv1.Deployment {
+func (resource DuResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDeployment) []*appsv1.Deployment {
 
 	spec := ranDeployment.Spec
 

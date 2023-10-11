@@ -24,6 +24,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	nfv1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
 	configref "github.com/nephio-project/api/references/v1alpha1"
-	workloadnephioorgv1alpha1 "workload.nephio.org/ran_deployment/api/v1alpha1"
 )
 
 // RANDeploymentReconciler reconciles a RANDeployment object
@@ -41,15 +42,46 @@ type RANDeploymentReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+type Plmn struct {
+	Mcc       string `json:"mcc,omitempty"`
+	Mnc       string `json:"mnc,omitempty"`
+	MncLength int    `json:"mncLength,omitempty"`
+}
+
+type Nssai struct {
+	Sst string `json:"sst,omitempty"`
+	Sd  string `json:"sd,omitempty"`
+}
+
+type Params3gpp struct {
+	//physicalCellId defines the physical cell identity of a cell
+	PhysicalCellId int `json:"physicalCellId,omitempty"`
+	//cellIdentity defines the cell identity of a cell
+	CellIdentity string `json:"cellIdentity,omitempty"`
+	//plmn defines the plmn of a cell
+	Plmn `json:"plmn,omitempty"`
+	//tac defines the tracking area code to be used by the cell
+	Tac string `json:"tac,omitempty"`
+	//nssaiList defines the Nssai list to be configured for the cell
+	NssaiList []Nssai `json:"nssaiList,omitempty"`
+}
+
+type Params3gppCrd struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec Params3gpp `json:"spec,omitempty"`
+}
+
 // Interface definition for NfResource
 type NfResource interface {
 	GetServiceAccount() []*corev1.ServiceAccount
-	GetConfigMap(logr.Logger, *workloadnephioorgv1alpha1.RANDeployment, map[string]*configref.Config) []*corev1.ConfigMap
-	createNetworkAttachmentDefinitionNetworks(string, *workloadnephioorgv1alpha1.RANDeploymentSpec) (string, error)
-	GetDeployment(*workloadnephioorgv1alpha1.RANDeployment) []*appsv1.Deployment
+	GetConfigMap(logr.Logger, *nfv1alpha1.NFDeployment, map[string][]*configref.Config) []*corev1.ConfigMap
+	createNetworkAttachmentDefinitionNetworks(string, *nfv1alpha1.NFDeploymentSpec) (string, error)
+	GetDeployment(*nfv1alpha1.NFDeployment) []*appsv1.Deployment
 }
 
-func (r *RANDeploymentReconciler) CreateAll(log logr.Logger, ctx context.Context, ranDeployment *workloadnephioorgv1alpha1.RANDeployment, nfResource NfResource, configInstancesMap map[string]*configref.Config) {
+func (r *RANDeploymentReconciler) CreateAll(log logr.Logger, ctx context.Context, ranDeployment *nfv1alpha1.NFDeployment, nfResource NfResource, configInstancesMap map[string][]*configref.Config) {
 	var err error
 	namespaceProvided := ranDeployment.Namespace
 
@@ -85,7 +117,7 @@ func (r *RANDeploymentReconciler) CreateAll(log logr.Logger, ctx context.Context
 
 }
 
-func (r *RANDeploymentReconciler) DeleteAll(log logr.Logger, ctx context.Context, ranDeployment *workloadnephioorgv1alpha1.RANDeployment, nfResource NfResource, configInstancesMap map[string]*configref.Config) {
+func (r *RANDeploymentReconciler) DeleteAll(log logr.Logger, ctx context.Context, ranDeployment *nfv1alpha1.NFDeployment, nfResource NfResource, configInstancesMap map[string][]*configref.Config) {
 	var err error
 	namespaceProvided := ranDeployment.Namespace
 
@@ -122,24 +154,27 @@ func (r *RANDeploymentReconciler) DeleteAll(log logr.Logger, ctx context.Context
 
 }
 
-func (r *RANDeploymentReconciler) GetConfigRefs(log logr.Logger, ctx context.Context, configRefList []corev1.ObjectReference) map[string]*configref.Config {
+func (r *RANDeploymentReconciler) GetConfigRefs(log logr.Logger, ctx context.Context, ranDeployment *nfv1alpha1.NFDeployment) (map[string][]*configref.Config, error) {
 
+	configRefList := ranDeployment.Spec.ParametersRefs
 	configInstances := []*configref.Config{}
-	configInstancesMap := make(map[string]*configref.Config)
+	configInstancesMap := make(map[string][]*configref.Config)
 	for _, configRef := range configRefList {
 		log.Info("ConfigRefs: ", "configRef.Name", configRef.Name)
 		configInstance := &configref.Config{}
-		if err := r.Get(ctx, types.NamespacedName{Name: configRef.Name, Namespace: configRef.Namespace}, configInstance); err != nil {
+		if err := r.Get(ctx, types.NamespacedName{Name: *configRef.Name, Namespace: ranDeployment.Namespace}, configInstance); err != nil {
 			log.Error(err, "Config ref get error")
+			return configInstancesMap, err
 		}
 		log.Info("Config ref:", "configInstance.Name", configInstance.Name)
 		configInstances = append(configInstances, configInstance)
 		var result map[string]any
 		json.Unmarshal(configInstance.Spec.Config.Raw, &result)
 		log.Info("Config ref:", "configInstance.Kind", result["kind"].(string))
-		configInstancesMap[result["kind"].(string)] = configInstance
+		kindInfo := result["kind"].(string)
+		configInstancesMap[kindInfo] = append(configInstancesMap[kindInfo], configInstance)
 	}
-	return configInstancesMap
+	return configInstancesMap, nil
 }
 
 //+kubebuilder:rbac:groups=workload.nephio.org,resources=randeployments,verbs=get;list;watch;create;update;patch;delete
@@ -159,7 +194,7 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	logger := log.FromContext(ctx).WithValues("RANDeployment", req.NamespacedName)
 	logger.Info("Reconcile for RANDeployment")
-	instance := &workloadnephioorgv1alpha1.RANDeployment{}
+	instance := &nfv1alpha1.NFDeployment{}
 	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -172,8 +207,11 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	logger.Info("RANDeployment", "RANDeployment CR", instance.Spec)
 
-	configInstancesMap := r.GetConfigRefs(logger, ctx, instance.Spec.ConfigRefs)
-
+	configInstancesMap, err := r.GetConfigRefs(logger, ctx, instance)
+	if err != nil {
+		logger.Error(err, "Failed to get required Config refs")
+		return ctrl.Result{}, err
+	}
 	// name of our custom finalizer
 	myFinalizerName := "batch.tutorial.kubebuilder.io/finalizer"
 	// examine DeletionTimestamp to determine if object is under deletion
@@ -182,18 +220,18 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		if !controllerutil.ContainsFinalizer(instance, myFinalizerName) {
 			// Assumed to be called only during CR-Creation
 
-			switch resourceType := instance.Spec.RanNfType; resourceType {
-			case "CU-CP":
+			switch resourceType := instance.Spec.Provider; resourceType {
+			case "oai-cucp.nephio.org":
 				logger.Info("--- Creation for CUCP")
 				cucpResource := CuCpResources{}
 				r.CreateAll(logger, ctx, instance, cucpResource, configInstancesMap)
 				logger.Info("--- CUCP Created")
-			case "CU-UP":
+			case "oai-cuup.nephio.org":
 				logger.Info("--- Creation for CUUP")
 				cuupResource := CuUpResources{}
 				r.CreateAll(logger, ctx, instance, cuupResource, configInstancesMap)
 				logger.Info("--- CUUP Created")
-			case "DU":
+			case "oai-du.nephio.org":
 				logger.Info("--- Creation for DU")
 				duResource := DuResources{}
 				r.CreateAll(logger, ctx, instance, duResource, configInstancesMap)
@@ -209,18 +247,18 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		// The object is assumed to be deleted
 		if controllerutil.ContainsFinalizer(instance, myFinalizerName) {
 
-			switch resourceType := instance.Spec.RanNfType; resourceType {
-			case "CU-CP":
+			switch resourceType := instance.Spec.Provider; resourceType {
+			case "oai-cucp.nephio.org":
 				logger.Info("--- Deletion for CUCP")
 				cucpResource := CuCpResources{}
 				r.DeleteAll(logger, ctx, instance, cucpResource, configInstancesMap)
 				logger.Info("--- CUCP Deleted")
-			case "CU-UP":
+			case "oai-cuup.nephio.org":
 				logger.Info("--- Deletion for CUUP")
 				cuupResource := CuUpResources{}
 				r.DeleteAll(logger, ctx, instance, cuupResource, configInstancesMap)
 				logger.Info("--- CUUP Deleted")
-			case "DU":
+			case "oai-du.nephio.org":
 				logger.Info("--- Deletion for DU")
 				duResource := DuResources{}
 				r.DeleteAll(logger, ctx, instance, duResource, configInstancesMap)
@@ -245,6 +283,6 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 // SetupWithManager sets up the controller with the Manager.
 func (r *RANDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&workloadnephioorgv1alpha1.RANDeployment{}).
+		For(&nfv1alpha1.NFDeployment{}).
 		Complete(r)
 }

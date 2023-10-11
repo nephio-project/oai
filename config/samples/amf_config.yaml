@@ -6,11 +6,12 @@ metadata:
 spec:
   config:
     apiVersion: workload.nephio.org/v1alpha1
-    kind: AMFDeployment
+    kind: NFDeployment
     metadata:
       name: amf-regional
       namespace: oaicp
     spec:
+      provider: oai-amf.nephio.org
       capacity:
         maxDownlinkThroughput: "0"
         maxSubscribers: 64

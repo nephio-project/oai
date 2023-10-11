@@ -83,7 +83,7 @@ rules:
 - apiGroups:
   - workload.nephio.org
   resources:
-  - randeployments
+  - nfdeployments
   verbs:
   - create
   - delete
@@ -95,7 +95,7 @@ rules:
 - apiGroups:
   - workload.nephio.org
   resources:
-  - randeployments/status
+  - nfdeployments/status
   verbs:
   - get
   - patch
