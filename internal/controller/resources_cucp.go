@@ -109,8 +109,6 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *nephi
 		return nil
 	}
 
-	println("created one: ", configuration)
-
 	configMap1 := &corev1.ConfigMap{
 		Data: map[string]string{
 			"mounted.conf": configuration,
@@ -139,7 +137,7 @@ func (resource CuCpResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDepl
 
 	spec := ranDeployment.Spec
 
-	networkAttachmentDefinitionNetworks, err := resource.createNetworkAttachmentDefinitionNetworks("oai-ran-cu-cp", &spec)
+	networkAttachmentDefinitionNetworks, err := resource.createNetworkAttachmentDefinitionNetworks(ranDeployment.Name, &spec)
 
 	if err != nil {
 		return nil

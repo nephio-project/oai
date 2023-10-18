@@ -101,7 +101,7 @@ func (resource DuResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDeploy
 
 	spec := ranDeployment.Spec
 
-	networkAttachmentDefinitionNetworks, err := resource.createNetworkAttachmentDefinitionNetworks("oai-ran-du", &spec)
+	networkAttachmentDefinitionNetworks, err := resource.createNetworkAttachmentDefinitionNetworks(ranDeployment.Name, &spec)
 
 	if err != nil {
 		return nil

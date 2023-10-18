@@ -33,7 +33,7 @@ type CuUpResources struct {
 
 func (resource CuUpResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *nephiov1alpha1.NFDeploymentSpec) (string, error) {
 	return free5gccontrollers.CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]nephiov1alpha1.InterfaceConfig{
-		"e1":  free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "e1-cu-up"),
+		"e1":  free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "e1"),
 		"n3":  free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "n3"),
 		"f1u": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1u"),
 	})
@@ -42,7 +42,7 @@ func (resource CuUpResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDepl
 
 	spec := ranDeployment.Spec
 
-	networkAttachmentDefinitionNetworks, err := resource.createNetworkAttachmentDefinitionNetworks("oai-ran-cu-up", &spec)
+	networkAttachmentDefinitionNetworks, err := resource.createNetworkAttachmentDefinitionNetworks(ranDeployment.Name, &spec)
 
 	if err != nil {
 		return nil
@@ -191,7 +191,7 @@ func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *nephi
 
 	quotedN3Ip := strconv.Quote(n3Ip)
 
-	e1Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "e1-cu-up")
+	e1Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "e1")
 	if err != nil {
 		log.Error(err, "Interface e1 not found in RANDeployment Spec")
 		return nil

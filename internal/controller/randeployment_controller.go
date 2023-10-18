@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/strings/slices"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -35,6 +36,10 @@ import (
 	nfv1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
 	configref "github.com/nephio-project/api/references/v1alpha1"
 )
+
+func GetSupportedProviders() []string {
+	return []string{"oai-cucp.nephio.org", "oai-cuup.nephio.org", "oai-du.nephio.org"}
+}
 
 // RANDeploymentReconciler reconciles a RANDeployment object
 type RANDeploymentReconciler struct {
@@ -205,6 +210,10 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
+	if !slices.Contains(GetSupportedProviders(), instance.Spec.Provider) {
+		logger.Info("Reconcile called for not supported provider", "Provider", instance.Spec.Provider)
+		return ctrl.Result{}, nil
+	}
 	logger.Info("RANDeployment", "RANDeployment CR", instance.Spec)
 
 	configInstancesMap, err := r.GetConfigRefs(logger, ctx, instance)
