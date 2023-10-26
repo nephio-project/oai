@@ -34,13 +34,13 @@ type DuResources struct {
 
 func (resource DuResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *nephiov1alpha1.NFDeploymentSpec) (string, error) {
 	return free5gccontrollers.CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]nephiov1alpha1.InterfaceConfig{
-		"f1": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1-du"),
+		"f1": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1"),
 	})
 }
 
 func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov1alpha1.NFDeployment, configInstancesMap map[string][]*configref.Config) []*corev1.ConfigMap {
 
-	quotedF1Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1-du")
+	quotedF1Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1")
 	if err != nil {
 		log.Error(err, "Interface f1-du not found in RANDeployment Spec")
 		return nil
