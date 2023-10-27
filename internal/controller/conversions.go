@@ -17,34 +17,16 @@ limitations under the License.
 package controller
 
 func int32Ptr(val int) *int32 {
-	var a int32
-	a = int32(val)
+	a := int32(val)
 	return &a
 }
 
 func int64Ptr(val int) *int64 {
-	var a int64
-	a = int64(val)
-	return &a
-}
-
-func intPtr(val int) *int {
-	a := val
-	return &a
-}
-
-func int16Ptr(val int) *int16 {
-	var a int16
-	a = int16(val)
+	a := int64(val)
 	return &a
 }
 
 func boolPtr(val bool) *bool {
-	a := val
-	return &a
-}
-
-func stringPtr(val string) *string {
 	a := val
 	return &a
 }

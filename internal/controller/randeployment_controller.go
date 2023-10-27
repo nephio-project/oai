@@ -162,7 +162,6 @@ func (r *RANDeploymentReconciler) DeleteAll(log logr.Logger, ctx context.Context
 func (r *RANDeploymentReconciler) GetConfigRefs(log logr.Logger, ctx context.Context, ranDeployment *nfv1alpha1.NFDeployment) (map[string][]*configref.Config, error) {
 
 	configRefList := ranDeployment.Spec.ParametersRefs
-	configInstances := []*configref.Config{}
 	configInstancesMap := make(map[string][]*configref.Config)
 	for _, configRef := range configRefList {
 		log.Info("ConfigRefs: ", "configRef.Name", configRef.Name)
@@ -172,9 +171,11 @@ func (r *RANDeploymentReconciler) GetConfigRefs(log logr.Logger, ctx context.Con
 			return configInstancesMap, err
 		}
 		log.Info("Config ref:", "configInstance.Name", configInstance.Name)
-		configInstances = append(configInstances, configInstance)
 		var result map[string]any
-		json.Unmarshal(configInstance.Spec.Config.Raw, &result)
+		if err := json.Unmarshal(configInstance.Spec.Config.Raw, &result); err != nil {
+			log.Error(err, "Unmarshal error")
+			return configInstancesMap, err
+		}
 		log.Info("Config ref:", "configInstance.Kind", result["kind"].(string))
 		kindInfo := result["kind"].(string)
 		configInstancesMap[kindInfo] = append(configInstancesMap[kindInfo], configInstance)

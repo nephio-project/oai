@@ -27,8 +27,7 @@ import (
 
 func getConfigInstanceByProvider(log logr.Logger, configInstances []*configref.Config, provider string) *nephiov1alpha1.NFDeployment {
 	for _, configRef := range configInstances {
-		var b []byte
-		b = configRef.Spec.Config.Raw
+		b := configRef.Spec.Config.Raw
 		nfDeployment := &nephiov1alpha1.NFDeployment{}
 		if err := json.Unmarshal(b, nfDeployment); err != nil {
 			log.Error(err, "Cannot Unmarshal NFDeployment")
