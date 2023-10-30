@@ -34,7 +34,8 @@ type DuResources struct {
 
 func (resource DuResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *nephiov1alpha1.NFDeploymentSpec) (string, error) {
 	return free5gccontrollers.CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]nephiov1alpha1.InterfaceConfig{
-		"f1": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1"),
+		"f1":       free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1"),
+		"ue-rfsim": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "ue-rfsim"),
 	})
 }
 
