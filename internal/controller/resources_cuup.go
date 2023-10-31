@@ -207,7 +207,7 @@ func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *nephi
 
 	quotedF1UIp := strconv.Quote(f1uIp)
 
-	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "oai-cucp.nephio.org")
+	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "cucp.openairinterface.org")
 
 	cuCpIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "e1")
 	if err != nil {

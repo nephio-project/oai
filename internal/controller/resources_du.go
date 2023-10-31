@@ -47,7 +47,7 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov
 		return nil
 	}
 
-	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "oai-cucp.nephio.org")
+	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "cucp.openairinterface.org")
 
 	quotedCuCpIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "f1c")
 	if err != nil {
@@ -55,24 +55,24 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov
 		return nil
 	}
 
-	params3gpp := &Params3gppCrd{}
-	if err := json.Unmarshal(configInstancesMap["Params3gpp"][0].Spec.Config.Raw, params3gpp); err != nil {
+	paramsRanNf := &RanNfConfig{}
+	if err := json.Unmarshal(configInstancesMap["RanNfConfig"][0].Spec.Config.Raw, paramsRanNf); err != nil {
 		log.Error(err, "Cannot Unmarshal Params3gpp")
 		return nil
 	}
 
 	configMap1 := &corev1.ConfigMap{
 		Data: map[string]string{
-			"nssaiSst":             params3gpp.Spec.NssaiList[0].Sst,
+			"nssaiSst":             strconv.Itoa(int(paramsRanNf.Spec.PlmnInfo.NssaiList[0].Sst)),
 			"timeZone":             "Europe/Paris",
 			"f1IfName":             "f1",
 			"f1cuIpAddress":        quotedCuCpIp,
 			"gnbNgaIfName":         "eth0",
 			"gnbNguIpAddress":      "status.podIP",
-			"mcc":                  params3gpp.Spec.Plmn.Mcc,
-			"mnc":                  params3gpp.Spec.Plmn.Mnc,
+			"mcc":                  paramsRanNf.Spec.PlmnInfo.Mcc,
+			"mnc":                  paramsRanNf.Spec.PlmnInfo.Mnc,
 			"rfSimulator":          "server",
-			"tac":                  params3gpp.Spec.Tac,
+			"tac":                  strconv.Itoa(int(paramsRanNf.Spec.PlmnInfo.Tac)),
 			"amfIpAddress":         "127.0.0.1",
 			"f1duIpAddress":        quotedF1Ip,
 			"gnbNguIfName":         "eth0",
@@ -80,11 +80,11 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov
 			"mountConfig":          "false",
 			"f1duPort":             "2152",
 			"gnbduName":            "oai-du-rfsim",
-			"mncLength":            strconv.Itoa(params3gpp.Spec.Plmn.MncLength),
+			"mncLength":            strconv.Itoa(int(paramsRanNf.Spec.PlmnInfo.MncLength)),
 			"useAdditionalOptions": "--sa --rfsim --log_config.global_log_options level,nocolor,time",
 			"f1cuPort":             "2152",
 			"gnbNgaIpAddress":      "status.podIP",
-			"nssaiSd0":             params3gpp.Spec.NssaiList[0].Sd,
+			"nssaiSd0":             "0x" + paramsRanNf.Spec.PlmnInfo.NssaiList[0].Sd,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "oai-gnb-du-configmap",

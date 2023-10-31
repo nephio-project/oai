@@ -43,7 +43,7 @@ gNBs =
     plmn_list = ({ mcc = {{ .PLMN_MCC }};
                    mnc = {{ .PLMN_MNC }};
                    mnc_length ={{ .PLMN_MNC_LENGTH }};
-                   snssaiList = ({ sst = {{ .NSSAI_SST }}, sd = {{ .NSSAI_SD }} })
+                   snssaiList = ({ sst = {{ .NSSAI_SST }}, sd = 0x{{ .NSSAI_SD }} })
                 });
 
 
@@ -357,13 +357,13 @@ type configurationTemplateValuesForCuCp struct {
 	F1C_IP          string
 	N2_IP           string
 	AMF_IP          string
-	TAC             string
+	TAC             uint32
 	CELL_ID         string
-	PHY_CELL_ID     string
+	PHY_CELL_ID     uint32
 	PLMN_MCC        string
 	PLMN_MNC        string
 	PLMN_MNC_LENGTH string
-	NSSAI_SST       string
+	NSSAI_SST       uint8
 	NSSAI_SD        string
 }
 

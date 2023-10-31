@@ -38,7 +38,7 @@ import (
 )
 
 func GetSupportedProviders() []string {
-	return []string{"oai-cucp.nephio.org", "oai-cuup.nephio.org", "oai-du.nephio.org"}
+	return []string{"cucp.openairinterface.org", "cuup.openairinterface.org", "du.openairinterface.org"}
 }
 
 // RANDeploymentReconciler reconciles a RANDeployment object
@@ -47,35 +47,56 @@ type RANDeploymentReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-type Plmn struct {
-	Mcc       string `json:"mcc,omitempty"`
-	Mnc       string `json:"mnc,omitempty"`
-	MncLength int    `json:"mncLength,omitempty"`
-}
-
 type Nssai struct {
-	Sst string `json:"sst,omitempty"`
-	Sd  string `json:"sd,omitempty"`
+	Sst uint8 `json:"sst,omitempty"`
+	// +kubebuilder:validation:Pattern=`^[A-Fa-f0-9]{6}$`
+	Sd string `json:"sd,omitempty"`
 }
 
-type Params3gpp struct {
-	//physicalCellId defines the physical cell identity of a cell
-	PhysicalCellId int `json:"physicalCellId,omitempty"`
-	//cellIdentity defines the cell identity of a cell
-	CellIdentity string `json:"cellIdentity,omitempty"`
-	//plmn defines the plmn of a cell
-	Plmn `json:"plmn,omitempty"`
+type PlmnInfo struct {
+	// +kubebuilder:validation:Pattern=`[02-79][0-9][0-9]`
+	Mcc string `json:"mcc,omitempty"`
+	// +kubebuilder:validation:Pattern=`[0-9][0-9][0-9]|[0-9][0-9]`
+	Mnc string `json:"mnc,omitempty"`
+	// +kubebuilder:validation:Enum=2;3
+	MncLength uint8 `json:"mncLength,omitempty"`
 	//tac defines the tracking area code to be used by the cell
-	Tac string `json:"tac,omitempty"`
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=16777215
+	Tac uint32 `json:"tac,omitempty"`
 	//nssaiList defines the Nssai list to be configured for the cell
 	NssaiList []Nssai `json:"nssaiList,omitempty"`
 }
 
-type Params3gppCrd struct {
+// RanNfConfigSpec defines the desired state of RanNfConfig
+type RanNfConfigSpec struct {
+	//gNB Identity
+	GnbId string `json:"gnbId,omitempty"`
+	//cellIdentity defines the cell identity of a cell
+	CellIdentity string `json:"cellIdentity,omitempty"`
+	//physicalCellId defines the physical cell identity of a cell
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=503
+	PhysicalCellId uint32 `json:"physicalCellId,omitempty"`
+	//plmn defines the plmn of a cell
+	PlmnInfo            `json:"plmnInfo,omitempty"`
+	DlFrequencyBand     uint32 `json:"dlFrequencyBand,omitempty"`
+	DlSubCarrierSpacing uint16 `json:"dlSubCarrierSpacing,omitempty"`
+	DlCarrierBandwidth  uint32 `json:"dlCarrierBandwidth,omitempty"`
+	UlFrequencyBand     uint32 `json:"ulFrequencyBand,omitempty"`
+	UlSubCarrierSpacing uint16 `json:"ulSubCarrierSpacing,omitempty"`
+	UlCarrierBandwidth  uint32 `json:"ulCarrierBandwidth,omitempty"`
+}
+
+type RanNfConfigStatus struct {
+}
+
+type RanNfConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec Params3gpp `json:"spec,omitempty"`
+	Spec   RanNfConfigSpec   `json:"spec,omitempty"`
+	Status RanNfConfigStatus `json:"status,omitempty"`
 }
 
 // Interface definition for NfResource
@@ -231,17 +252,17 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			// Assumed to be called only during CR-Creation
 
 			switch resourceType := instance.Spec.Provider; resourceType {
-			case "oai-cucp.nephio.org":
+			case "cucp.openairinterface.org":
 				logger.Info("--- Creation for CUCP")
 				cucpResource := CuCpResources{}
 				r.CreateAll(logger, ctx, instance, cucpResource, configInstancesMap)
 				logger.Info("--- CUCP Created")
-			case "oai-cuup.nephio.org":
+			case "cuup.openairinterface.org":
 				logger.Info("--- Creation for CUUP")
 				cuupResource := CuUpResources{}
 				r.CreateAll(logger, ctx, instance, cuupResource, configInstancesMap)
 				logger.Info("--- CUUP Created")
-			case "oai-du.nephio.org":
+			case "du.openairinterface.org":
 				logger.Info("--- Creation for DU")
 				duResource := DuResources{}
 				r.CreateAll(logger, ctx, instance, duResource, configInstancesMap)
@@ -258,17 +279,17 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		if controllerutil.ContainsFinalizer(instance, myFinalizerName) {
 
 			switch resourceType := instance.Spec.Provider; resourceType {
-			case "oai-cucp.nephio.org":
+			case "cucp.openairinterface.org":
 				logger.Info("--- Deletion for CUCP")
 				cucpResource := CuCpResources{}
 				r.DeleteAll(logger, ctx, instance, cucpResource, configInstancesMap)
 				logger.Info("--- CUCP Deleted")
-			case "oai-cuup.nephio.org":
+			case "cuup.openairinterface.org":
 				logger.Info("--- Deletion for CUUP")
 				cuupResource := CuUpResources{}
 				r.DeleteAll(logger, ctx, instance, cuupResource, configInstancesMap)
 				logger.Info("--- CUUP Deleted")
-			case "oai-du.nephio.org":
+			case "du.openairinterface.org":
 				logger.Info("--- Deletion for DU")
 				duResource := DuResources{}
 				r.DeleteAll(logger, ctx, instance, duResource, configInstancesMap)

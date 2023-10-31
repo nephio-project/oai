@@ -72,7 +72,7 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *nephi
 
 	quotedF1CIp := strconv.Quote(f1cIp)
 
-	amfDeployment := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "oai-amf.nephio.org")
+	amfDeployment := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "amf.openairinterface.org")
 
 	amfIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(amfDeployment.Spec.Interfaces, "n2")
 	if err != nil {
@@ -82,8 +82,8 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *nephi
 
 	quotedAmfIp := strconv.Quote(amfIp)
 
-	params3gpp := &Params3gppCrd{}
-	if err := json.Unmarshal(configInstancesMap["Params3gpp"][0].Spec.Config.Raw, params3gpp); err != nil {
+	paramsRanNf := &RanNfConfig{}
+	if err := json.Unmarshal(configInstancesMap["RanNfConfig"][0].Spec.Config.Raw, paramsRanNf); err != nil {
 		log.Error(err, "Cannot Unmarshal Params3gpp")
 		return nil
 	}
@@ -93,14 +93,14 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *nephi
 		F1C_IP:          quotedF1CIp,
 		N2_IP:           quotedN2Ip,
 		AMF_IP:          quotedAmfIp,
-		TAC:             params3gpp.Spec.Tac,
-		CELL_ID:         params3gpp.Spec.CellIdentity,
-		PHY_CELL_ID:     strconv.Itoa(params3gpp.Spec.PhysicalCellId),
-		PLMN_MCC:        params3gpp.Spec.Plmn.Mcc,
-		PLMN_MNC:        params3gpp.Spec.Plmn.Mnc,
-		PLMN_MNC_LENGTH: strconv.Itoa(params3gpp.Spec.Plmn.MncLength),
-		NSSAI_SST:       params3gpp.Spec.NssaiList[0].Sst,
-		NSSAI_SD:        params3gpp.Spec.NssaiList[0].Sd,
+		TAC:             paramsRanNf.Spec.PlmnInfo.Tac,
+		CELL_ID:         paramsRanNf.Spec.CellIdentity,
+		PHY_CELL_ID:     paramsRanNf.Spec.PhysicalCellId,
+		PLMN_MCC:        paramsRanNf.Spec.PlmnInfo.Mcc,
+		PLMN_MNC:        paramsRanNf.Spec.PlmnInfo.Mnc,
+		PLMN_MNC_LENGTH: strconv.Itoa(int(paramsRanNf.Spec.PlmnInfo.MncLength)),
+		NSSAI_SST:       paramsRanNf.Spec.PlmnInfo.NssaiList[0].Sst,
+		NSSAI_SD:        paramsRanNf.Spec.PlmnInfo.NssaiList[0].Sd,
 	}
 
 	configuration, err := renderConfigurationTemplateForCuCp(templateValues)
