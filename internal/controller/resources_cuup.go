@@ -245,3 +245,7 @@ func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *nephi
 
 	return []*corev1.ConfigMap{configMap1}
 }
+
+func (resource CuUpResources) GetService() []*corev1.Service {
+	return []*corev1.Service{}
+}

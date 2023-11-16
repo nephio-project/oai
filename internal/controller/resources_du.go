@@ -27,6 +27,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type DuResources struct {
@@ -34,8 +35,7 @@ type DuResources struct {
 
 func (resource DuResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *nephiov1alpha1.NFDeploymentSpec) (string, error) {
 	return free5gccontrollers.CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]nephiov1alpha1.InterfaceConfig{
-		"f1":       free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1"),
-		"ue-rfsim": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "ue-rfsim"),
+		"f1": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1"),
 	})
 }
 
@@ -425,4 +425,57 @@ func (resource DuResources) GetServiceAccount() []*corev1.ServiceAccount {
 	}
 
 	return []*corev1.ServiceAccount{serviceAccount1}
+}
+
+func (resource DuResources) GetService() []*corev1.Service {
+
+	service1 := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				"app.kubernetes.io/name": "oai-gnb-du",
+			},
+			Name: "oai-gnb-du",
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"app.kubernetes.io/name": "oai-gnb-du",
+			},
+			Type:      corev1.ServiceType("ClusterIP"),
+			ClusterIP: "None",
+			Ports: []corev1.ServicePort{
+
+				corev1.ServicePort{
+					Name:     "f1c",
+					Port:     38472,
+					Protocol: corev1.Protocol("SCTP"),
+					TargetPort: intstr.IntOrString{
+						IntVal: 38472,
+					},
+				},
+				corev1.ServicePort{
+					Name:     "f1u",
+					Port:     2152,
+					Protocol: corev1.Protocol("UDP"),
+					TargetPort: intstr.IntOrString{
+						IntVal: 2152,
+					},
+				},
+				corev1.ServicePort{
+					Name:     "rfsim",
+					Port:     4043,
+					Protocol: corev1.Protocol("UDP"),
+					TargetPort: intstr.IntOrString{
+						IntVal: 4043,
+					},
+				},
+			},
+			PublishNotReadyAddresses: false,
+		},
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+	}
+
+	return []*corev1.Service{service1}
 }

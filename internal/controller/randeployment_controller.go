@@ -70,8 +70,6 @@ type PlmnInfo struct {
 
 // RanNfConfigSpec defines the desired state of RanNfConfig
 type RanNfConfigSpec struct {
-	//gNB Identity
-	GnbId string `json:"gnbId,omitempty"`
 	//cellIdentity defines the cell identity of a cell
 	CellIdentity string `json:"cellIdentity,omitempty"`
 	//physicalCellId defines the physical cell identity of a cell
@@ -105,6 +103,7 @@ type NfResource interface {
 	GetConfigMap(logr.Logger, *nfv1alpha1.NFDeployment, map[string][]*configref.Config) []*corev1.ConfigMap
 	createNetworkAttachmentDefinitionNetworks(string, *nfv1alpha1.NFDeploymentSpec) (string, error)
 	GetDeployment(*nfv1alpha1.NFDeployment) []*appsv1.Deployment
+	GetService() []*corev1.Service
 }
 
 func (r *RANDeploymentReconciler) CreateAll(log logr.Logger, ctx context.Context, ranDeployment *nfv1alpha1.NFDeployment, nfResource NfResource, configInstancesMap map[string][]*configref.Config) {
@@ -138,6 +137,15 @@ func (r *RANDeploymentReconciler) CreateAll(log logr.Logger, ctx context.Context
 		err = r.Create(ctx, resource)
 		if err != nil {
 			log.Error(err, "Error During Creating resource of GetDeployment()")
+		}
+	}
+	for _, resource := range nfResource.GetService() {
+		if resource.ObjectMeta.Namespace == "" {
+			resource.ObjectMeta.Namespace = namespaceProvided
+		}
+		err = r.Create(ctx, resource)
+		if err != nil {
+			log.Error(err, "Error During Creating resource of GetService()")
 		}
 	}
 
@@ -174,6 +182,17 @@ func (r *RANDeploymentReconciler) DeleteAll(log logr.Logger, ctx context.Context
 		err = r.Delete(ctx, resource)
 		if err != nil {
 			log.Error(err, "Error During Deleting resource of GetDeployment()")
+		}
+
+	}
+
+	for _, resource := range nfResource.GetService() {
+		if resource.ObjectMeta.Namespace == "" {
+			resource.ObjectMeta.Namespace = namespaceProvided
+		}
+		err = r.Delete(ctx, resource)
+		if err != nil {
+			log.Error(err, "Error During Deleting resource of GetService()")
 		}
 
 	}

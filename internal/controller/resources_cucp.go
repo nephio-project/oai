@@ -260,3 +260,7 @@ func (resource CuCpResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDepl
 
 	return []*appsv1.Deployment{deployment1}
 }
+
+func (resource CuCpResources) GetService() []*corev1.Service {
+	return []*corev1.Service{}
+}
