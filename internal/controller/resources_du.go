@@ -41,19 +41,23 @@ func (resource DuResources) createNetworkAttachmentDefinitionNetworks(templateNa
 
 func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov1alpha1.NFDeployment, configInstancesMap map[string][]*configref.Config) []*corev1.ConfigMap {
 
-	quotedF1Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1")
+	f1cIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1")
 	if err != nil {
 		log.Error(err, "Interface f1-du not found in RANDeployment Spec")
 		return nil
 	}
 
+	quotedF1Ip := strconv.Quote(f1cIp)
+
 	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "cucp.openairinterface.org")
 
-	quotedCuCpIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "f1c")
+	cuCpIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "f1c")
 	if err != nil {
 		log.Error(err, "f1c not found in Config Refs RANDeployment")
 		return nil
 	}
+
+	quotedCuCpIp := strconv.Quote(cuCpIp)
 
 	paramsRanNf := &RanNfConfig{}
 	if err := json.Unmarshal(configInstancesMap["RanNfConfig"][0].Spec.Config.Raw, paramsRanNf); err != nil {
@@ -61,30 +65,28 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov
 		return nil
 	}
 
+	templateValues := configurationTemplateValuesForDu{
+		F1C_DU_IP:       quotedF1Ip,
+		F1C_CU_IP:       quotedCuCpIp,
+		TAC:             paramsRanNf.Spec.PlmnInfo.Tac,
+		CELL_ID:         paramsRanNf.Spec.CellIdentity,
+		PHY_CELL_ID:     paramsRanNf.Spec.PhysicalCellId,
+		PLMN_MCC:        paramsRanNf.Spec.PlmnInfo.Mcc,
+		PLMN_MNC:        paramsRanNf.Spec.PlmnInfo.Mnc,
+		PLMN_MNC_LENGTH: strconv.Itoa(int(paramsRanNf.Spec.PlmnInfo.MncLength)),
+		NSSAI_SST:       paramsRanNf.Spec.PlmnInfo.NssaiList[0].Sst,
+		NSSAI_SD:        paramsRanNf.Spec.PlmnInfo.NssaiList[0].Sd,
+	}
+
+	configuration, err := renderConfigurationTemplateForDu(templateValues)
+	if err != nil {
+		log.Error(err, "Could not render CU CP configuration template.")
+		return nil
+	}
+
 	configMap1 := &corev1.ConfigMap{
 		Data: map[string]string{
-			"nssaiSst":             strconv.Itoa(int(paramsRanNf.Spec.PlmnInfo.NssaiList[0].Sst)),
-			"timeZone":             "Europe/Paris",
-			"f1IfName":             "f1",
-			"f1cuIpAddress":        quotedCuCpIp,
-			"gnbNgaIfName":         "eth0",
-			"gnbNguIpAddress":      "status.podIP",
-			"mcc":                  paramsRanNf.Spec.PlmnInfo.Mcc,
-			"mnc":                  paramsRanNf.Spec.PlmnInfo.Mnc,
-			"rfSimulator":          "server",
-			"tac":                  strconv.Itoa(int(paramsRanNf.Spec.PlmnInfo.Tac)),
-			"amfIpAddress":         "127.0.0.1",
-			"f1duIpAddress":        quotedF1Ip,
-			"gnbNguIfName":         "eth0",
-			"useSaTDDdu":           "yes",
-			"mountConfig":          "false",
-			"f1duPort":             "2152",
-			"gnbduName":            "oai-du-rfsim",
-			"mncLength":            strconv.Itoa(int(paramsRanNf.Spec.PlmnInfo.MncLength)),
-			"useAdditionalOptions": "--sa --rfsim --log_config.global_log_options level,nocolor,time",
-			"f1cuPort":             "2152",
-			"gnbNgaIpAddress":      "status.podIP",
-			"nssaiSd0":             "0x" + paramsRanNf.Spec.PlmnInfo.NssaiList[0].Sd,
+			"mounted.conf": configuration,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "oai-gnb-du-configmap",
@@ -172,196 +174,8 @@ func (resource DuResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDeploy
 									Value: "--sa --rfsim --log_config.global_log_options level,nocolor,time",
 								},
 								corev1.EnvVar{
-									Name: "USE_SA_TDD_DU",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "useSaTDDdu",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "GNB_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-											Key: "gnbduName",
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "MCC",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "mcc",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "MNC",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "mnc",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "MNC_LENGTH",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-											Key: "mncLength",
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "TAC",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-											Key: "tac",
-										},
-									},
-								},
-								corev1.EnvVar{
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "nssaiSst",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-									Name: "NSSAI_SST",
-								},
-								corev1.EnvVar{
-									Name: "NSSAI_SD0",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "nssaiSd0",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "AMF_IP_ADDRESS",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "amfIpAddress",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "GNB_NGA_IF_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "gnbNgaIfName",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "GNB_NGA_IP_ADDRESS",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "GNB_NGU_IF_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-											Key: "gnbNguIfName",
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "GNB_NGU_IP_ADDRESS",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "F1_IF_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "f1IfName",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "F1_DU_IP_ADDRESS",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "f1duIpAddress",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "F1_CU_IP_ADDRESS",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "f1cuIpAddress",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "F1_CU_D_PORT",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "f1cuPort",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
-								},
-								corev1.EnvVar{
-									Name: "F1_DU_D_PORT",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											Key: "f1duPort",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "oai-gnb-du-configmap",
-											},
-										},
-									},
+									Name:  "USE_VOLUMED_CONF",
+									Value: "yes",
 								},
 							},
 							Image: "docker.io/oaisoftwarealliance/oai-gnb:2023.w19",
