@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	runscheme "sigs.k8s.io/controller-runtime/pkg/scheme"
 
-	nfv1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
 	refv1alpha1 "github.com/nephio-project/api/references/v1alpha1"
+	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
 	"workload.nephio.org/ran_deployment/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
@@ -92,13 +92,19 @@ func main() {
 	schemeBuilder := &runscheme.Builder{GroupVersion: refv1alpha1.GroupVersion}
 	schemeBuilder.Register(&refv1alpha1.Config{}, &refv1alpha1.ConfigList{})
 	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
-		setupLog.Error(err, "Not able to register Config.ref kind")
+		setupLog.Error(err, "Not able to register references/v1alpha1 Config kind")
 	}
 
-	schemeBuilder = &runscheme.Builder{GroupVersion: nfv1alpha1.GroupVersion}
-	schemeBuilder.Register(&nfv1alpha1.NFDeployment{}, &nfv1alpha1.NFDeploymentList{})
+	schemeBuilder = &runscheme.Builder{GroupVersion: workloadv1alpha1.GroupVersion}
+	schemeBuilder.Register(&workloadv1alpha1.NFConfig{}, &workloadv1alpha1.NFConfigList{})
 	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
-		setupLog.Error(err, "Not able to register Config.ref kind")
+		setupLog.Error(err, "Not able to register workload/v1alpha1 NFConfig kind")
+	}
+
+	schemeBuilder = &runscheme.Builder{GroupVersion: workloadv1alpha1.GroupVersion}
+	schemeBuilder.Register(&workloadv1alpha1.NFDeployment{}, &workloadv1alpha1.NFDeploymentList{})
+	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
+		setupLog.Error(err, "Not able to register workload/v1alpha1 NFDeployment kind")
 	}
 
 	if err = (&controller.RANDeploymentReconciler{

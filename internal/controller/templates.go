@@ -604,7 +604,7 @@ type configurationTemplateValuesForCuCp struct {
 	PLMN_MCC        string
 	PLMN_MNC        string
 	PLMN_MNC_LENGTH string
-	NSSAI_SST       uint8
+	NSSAI_SST       int
 	NSSAI_SD        string
 }
 
@@ -624,7 +624,7 @@ type configurationTemplateValuesForDu struct {
 	PLMN_MCC        string
 	PLMN_MNC        string
 	PLMN_MNC_LENGTH string
-	NSSAI_SST       uint8
+	NSSAI_SST       int
 	NSSAI_SD        string
 }
 

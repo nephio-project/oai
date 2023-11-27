@@ -20,9 +20,8 @@ import (
 	"strconv"
 
 	"github.com/go-logr/logr"
-	nephiov1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
-	configref "github.com/nephio-project/api/references/v1alpha1"
-	free5gccontrollers "github.com/nephio-project/free5gc/controllers"
+	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,14 +30,14 @@ import (
 type CuUpResources struct {
 }
 
-func (resource CuUpResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *nephiov1alpha1.NFDeploymentSpec) (string, error) {
-	return free5gccontrollers.CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]nephiov1alpha1.InterfaceConfig{
-		"e1":  free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "e1"),
-		"n3":  free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "n3"),
-		"f1u": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1u"),
+func (resource CuUpResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *workloadv1alpha1.NFDeploymentSpec) (string, error) {
+	return CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]workloadv1alpha1.InterfaceConfig{
+		"e1":  GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "e1"),
+		"n3":  GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "n3"),
+		"f1u": GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1u"),
 	})
 }
-func (resource CuUpResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDeployment) []*appsv1.Deployment {
+func (resource CuUpResources) GetDeployment(ranDeployment *workloadv1alpha1.NFDeployment) []*appsv1.Deployment {
 
 	spec := ranDeployment.Spec
 
@@ -49,7 +48,7 @@ func (resource CuUpResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDepl
 	}
 
 	podAnnotations := make(map[string]string)
-	podAnnotations[free5gccontrollers.NetworksAnnotation] = networkAttachmentDefinitionNetworks
+	podAnnotations[NetworksAnnotation] = networkAttachmentDefinitionNetworks
 
 	deployment1 := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -181,9 +180,9 @@ func (resource CuUpResources) GetServiceAccount() []*corev1.ServiceAccount {
 	return []*corev1.ServiceAccount{serviceAccount1}
 }
 
-func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov1alpha1.NFDeployment, configInstancesMap map[string][]*configref.Config) []*corev1.ConfigMap {
+func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *workloadv1alpha1.NFDeployment, configInfo *ConfigInfo) []*corev1.ConfigMap {
 
-	n3Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "n3")
+	n3Ip, err := GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "n3")
 	if err != nil {
 		log.Error(err, "Interface n3 not found in RANDeployment Spec")
 		return nil
@@ -191,7 +190,7 @@ func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *nephi
 
 	quotedN3Ip := strconv.Quote(n3Ip)
 
-	e1Ip, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "e1")
+	e1Ip, err := GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "e1")
 	if err != nil {
 		log.Error(err, "Interface e1 not found in RANDeployment Spec")
 		return nil
@@ -199,7 +198,7 @@ func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *nephi
 
 	quotedE1Ip := strconv.Quote(e1Ip)
 
-	f1uIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1u")
+	f1uIp, err := GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1u")
 	if err != nil {
 		log.Error(err, "Interface F1 U not found in RANDeployment Spec")
 		return nil
@@ -207,9 +206,9 @@ func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *nephi
 
 	quotedF1UIp := strconv.Quote(f1uIp)
 
-	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "cucp.openairinterface.org")
+	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInfo.ConfigRefInfo["NFDeployment"], "cucp.openairinterface.org")
 
-	cuCpIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "e1")
+	cuCpIp, err := GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "e1")
 	if err != nil {
 		log.Error(err, "CU CP IP not found in Config Refs RANDeployment")
 		return nil

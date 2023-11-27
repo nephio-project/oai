@@ -21,14 +21,15 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	nephiov1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
 	configref "github.com/nephio-project/api/references/v1alpha1"
+	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func getConfigInstanceByProvider(log logr.Logger, configInstances []*configref.Config, provider string) *nephiov1alpha1.NFDeployment {
+func getConfigInstanceByProvider(log logr.Logger, configInstances []*configref.Config, provider string) *workloadv1alpha1.NFDeployment {
 	for _, configRef := range configInstances {
 		b := configRef.Spec.Config.Raw
-		nfDeployment := &nephiov1alpha1.NFDeployment{}
+		nfDeployment := &workloadv1alpha1.NFDeployment{}
 		if err := json.Unmarshal(b, nfDeployment); err != nil {
 			log.Error(err, "Cannot Unmarshal NFDeployment")
 			return nil
@@ -39,4 +40,14 @@ func getConfigInstanceByProvider(log logr.Logger, configInstances []*configref.C
 	}
 	log.Error(fmt.Errorf("Provider %s not found", provider), "Cannot find provider in Config NFDeployment")
 	return nil
+}
+
+func CheckMandatoryKinds(configSelfInfo map[string]runtime.RawExtension) bool {
+
+	for _, kind := range GetMandatoryNfKinds() {
+		if _, available := configSelfInfo[kind]; !available {
+			return available
+		}
+	}
+	return true
 }

@@ -21,27 +21,26 @@ import (
 	"strconv"
 
 	"github.com/go-logr/logr"
-	nephiov1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
-	configref "github.com/nephio-project/api/references/v1alpha1"
-	free5gccontrollers "github.com/nephio-project/free5gc/controllers"
+	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	workloadnfconfig "workload.nephio.org/ran_deployment/api/v1alpha1"
 )
 
 type DuResources struct {
 }
 
-func (resource DuResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *nephiov1alpha1.NFDeploymentSpec) (string, error) {
-	return free5gccontrollers.CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]nephiov1alpha1.InterfaceConfig{
-		"f1": free5gccontrollers.GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1"),
+func (resource DuResources) createNetworkAttachmentDefinitionNetworks(templateName string, ranDeploymentSpec *workloadv1alpha1.NFDeploymentSpec) (string, error) {
+	return CreateNetworkAttachmentDefinitionNetworks(templateName, map[string][]workloadv1alpha1.InterfaceConfig{
+		"f1": GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1"),
 	})
 }
 
-func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov1alpha1.NFDeployment, configInstancesMap map[string][]*configref.Config) []*corev1.ConfigMap {
+func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloadv1alpha1.NFDeployment, configInfo *ConfigInfo) []*corev1.ConfigMap {
 
-	f1cIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1")
+	f1cIp, err := GetFirstInterfaceConfigIPv4(ranDeployment.Spec.Interfaces, "f1")
 	if err != nil {
 		log.Error(err, "Interface f1-du not found in RANDeployment Spec")
 		return nil
@@ -49,9 +48,9 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov
 
 	quotedF1Ip := strconv.Quote(f1cIp)
 
-	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInstancesMap["NFDeployment"], "cucp.openairinterface.org")
+	ranDeploymentConfigRef := getConfigInstanceByProvider(log, configInfo.ConfigRefInfo["NFDeployment"], "cucp.openairinterface.org")
 
-	cuCpIp, err := free5gccontrollers.GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "f1c")
+	cuCpIp, err := GetFirstInterfaceConfigIPv4(ranDeploymentConfigRef.Spec.Interfaces, "f1c")
 	if err != nil {
 		log.Error(err, "f1c not found in Config Refs RANDeployment")
 		return nil
@@ -59,23 +58,29 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov
 
 	quotedCuCpIp := strconv.Quote(cuCpIp)
 
-	paramsRanNf := &RanNfConfig{}
-	if err := json.Unmarshal(configInstancesMap["RanNfConfig"][0].Spec.Config.Raw, paramsRanNf); err != nil {
-		log.Error(err, "Cannot Unmarshal Params3gpp")
+	paramsRanNf := &workloadnfconfig.RanConfig{}
+	if err := json.Unmarshal(configInfo.ConfigSelfInfo["RanConfig"].Raw, paramsRanNf); err != nil {
+		log.Error(err, "Cannot Unmarshal RanConfig")
+		return nil
+	}
+
+	paramsPlmn := &workloadnfconfig.PLMN{}
+	if err := json.Unmarshal(configInfo.ConfigSelfInfo["PLMN"].Raw, paramsPlmn); err != nil {
+		log.Error(err, "Cannot Unmarshal PLMN")
 		return nil
 	}
 
 	templateValues := configurationTemplateValuesForDu{
 		F1C_DU_IP:       quotedF1Ip,
 		F1C_CU_IP:       quotedCuCpIp,
-		TAC:             paramsRanNf.Spec.PlmnInfo.Tac,
+		TAC:             paramsPlmn.Spec.PLMNInfo[0].TAC,
 		CELL_ID:         paramsRanNf.Spec.CellIdentity,
-		PHY_CELL_ID:     paramsRanNf.Spec.PhysicalCellId,
-		PLMN_MCC:        paramsRanNf.Spec.PlmnInfo.Mcc,
-		PLMN_MNC:        paramsRanNf.Spec.PlmnInfo.Mnc,
-		PLMN_MNC_LENGTH: strconv.Itoa(int(paramsRanNf.Spec.PlmnInfo.MncLength)),
-		NSSAI_SST:       paramsRanNf.Spec.PlmnInfo.NssaiList[0].Sst,
-		NSSAI_SD:        paramsRanNf.Spec.PlmnInfo.NssaiList[0].Sd,
+		PHY_CELL_ID:     paramsRanNf.Spec.PhysicalCellID,
+		PLMN_MCC:        paramsPlmn.Spec.PLMNInfo[0].PLMNID.MCC,
+		PLMN_MNC:        paramsPlmn.Spec.PLMNInfo[0].PLMNID.MNC,
+		PLMN_MNC_LENGTH: strconv.Itoa(int(len(paramsPlmn.Spec.PLMNInfo[0].PLMNID.MNC))),
+		NSSAI_SST:       paramsPlmn.Spec.PLMNInfo[0].NSSAI[0].SST,
+		NSSAI_SD:        *paramsPlmn.Spec.PLMNInfo[0].NSSAI[0].SD,
 	}
 
 	configuration, err := renderConfigurationTemplateForDu(templateValues)
@@ -100,7 +105,7 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *nephiov
 	return []*corev1.ConfigMap{configMap1}
 }
 
-func (resource DuResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDeployment) []*appsv1.Deployment {
+func (resource DuResources) GetDeployment(ranDeployment *workloadv1alpha1.NFDeployment) []*appsv1.Deployment {
 
 	spec := ranDeployment.Spec
 
@@ -111,7 +116,7 @@ func (resource DuResources) GetDeployment(ranDeployment *nephiov1alpha1.NFDeploy
 	}
 
 	podAnnotations := make(map[string]string)
-	podAnnotations[free5gccontrollers.NetworksAnnotation] = networkAttachmentDefinitionNetworks
+	podAnnotations[NetworksAnnotation] = networkAttachmentDefinitionNetworks
 
 	deployment1 := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
