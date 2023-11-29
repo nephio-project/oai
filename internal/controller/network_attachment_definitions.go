@@ -19,18 +19,12 @@ limitations under the License.
 package controller
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/go-logr/logr"
 	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const NetworksAnnotation = "k8s.v1.cni.cncf.io/networks"
@@ -82,32 +76,4 @@ func CreateNetworkAttachmentDefinitionNetworks(templateName string, interfaceCon
 
 func CreateNetworkAttachmentDefinitionName(templateName string, suffix string) string {
 	return templateName + "-" + suffix
-}
-
-// Gets a Deployment resource and checks that the NetworkAttachmentDefinitions specified in its
-// `k8s.v1.cni.cncf.io/networks` annotation exist in the same namespace.
-func ValidateNetworkAttachmentDefinitions(ctx context.Context, c client.Client, log logr.Logger, kind string, deployment *appsv1.Deployment) bool {
-	networksJson, ok := deployment.Spec.Template.Annotations[NetworksAnnotation]
-	if !ok {
-		log.Info(fmt.Sprintf("Annotation %q not found", NetworksAnnotation), kind+".namespace", deployment.Namespace)
-		return false
-	}
-
-	var networks []networkAttachmentDefinitionNetwork
-	if err := json.Unmarshal([]byte(networksJson), &networks); err != nil {
-		log.Error(err, fmt.Sprintf("Failed to parse %q annotation", kind), kind+".namespace", deployment.Namespace)
-		return false
-	}
-
-	for _, network := range networks {
-		var u unstructured.Unstructured
-		u.SetGroupVersionKind(NetworkAttachmentDefinitionGVK)
-		key := client.ObjectKey{Namespace: deployment.Namespace, Name: network.Name}
-		if err := c.Get(ctx, key, &u); err != nil {
-			log.Error(err, fmt.Sprintf("Failed to get NetworkAttachmentDefinition %q", network.Name), kind+".namespace", deployment.Namespace)
-			return false
-		}
-	}
-
-	return true
 }

@@ -17,10 +17,12 @@ limitations under the License.
 package controller
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"github.com/go-logr/logr"
 	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
+	workloadnfconfig "workload.nephio.org/ran_deployment/api/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,13 +39,19 @@ func (resource CuUpResources) createNetworkAttachmentDefinitionNetworks(template
 		"f1u": GetInterfaceConfigs(ranDeploymentSpec.Interfaces, "f1u"),
 	})
 }
-func (resource CuUpResources) GetDeployment(ranDeployment *workloadv1alpha1.NFDeployment) []*appsv1.Deployment {
+func (resource CuUpResources) GetDeployment(log logr.Logger, ranDeployment *workloadv1alpha1.NFDeployment, configInfo *ConfigInfo) []*appsv1.Deployment {
 
 	spec := ranDeployment.Spec
 
 	networkAttachmentDefinitionNetworks, err := resource.createNetworkAttachmentDefinitionNetworks(ranDeployment.Name, &spec)
 
 	if err != nil {
+		return nil
+	}
+
+	paramsOAI := &workloadnfconfig.OAIConfig{}
+	if err := json.Unmarshal(configInfo.ConfigSelfInfo["OAIConfig"].Raw, paramsOAI); err != nil {
+		log.Error(err, "Cannot Unmarshal OAIConfig")
 		return nil
 	}
 
@@ -133,7 +141,7 @@ func (resource CuUpResources) GetDeployment(ranDeployment *workloadv1alpha1.NFDe
 							Stdin:     false,
 							StdinOnce: false,
 							TTY:       false,
-							Image:     "docker.io/oaisoftwarealliance/oai-nr-cuup:2023.w19",
+							Image:     paramsOAI.Spec.Image,
 							Name:      "gnbcuup",
 						},
 					},
@@ -216,11 +224,23 @@ func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 
 	quotedCuCpIp := strconv.Quote(cuCpIp)
 
+	paramsPlmn := &workloadnfconfig.PLMN{}
+	if err := json.Unmarshal(configInfo.ConfigSelfInfo["PLMN"].Raw, paramsPlmn); err != nil {
+		log.Error(err, "Cannot Unmarshal PLMN")
+		return nil
+	}
+
 	templateValues := configurationTemplateValuesForCuUp{
-		E1_IP:   quotedE1Ip,
-		F1U_IP:  quotedF1UIp,
-		N3_IP:   quotedN3Ip,
-		CUCP_E1: quotedCuCpIp,
+		E1_IP:           quotedE1Ip,
+		F1U_IP:          quotedF1UIp,
+		N3_IP:           quotedN3Ip,
+		CUCP_E1:         quotedCuCpIp,
+		TAC:             paramsPlmn.Spec.PLMNInfo[0].TAC,
+		PLMN_MCC:        paramsPlmn.Spec.PLMNInfo[0].PLMNID.MCC,
+		PLMN_MNC:        paramsPlmn.Spec.PLMNInfo[0].PLMNID.MNC,
+		PLMN_MNC_LENGTH: strconv.Itoa(int(len(paramsPlmn.Spec.PLMNInfo[0].PLMNID.MNC))),
+		NSSAI_SST:       paramsPlmn.Spec.PLMNInfo[0].NSSAI[0].SST,
+		NSSAI_SD:        *paramsPlmn.Spec.PLMNInfo[0].NSSAI[0].SD,
 	}
 
 	configuration, err := renderConfigurationTemplateForCuUp(templateValues)

@@ -73,15 +73,15 @@ gNBs =
     #frequencyInfoDL
       # this is 3600 MHz + 43 PRBs@30kHz SCS (same as initial BWP)
       absoluteFrequencySSB                                             = 641280;
-      dl_frequencyBand                                                 = 78;
+      dl_frequencyBand                                                 = {{ .DL_FREQ_BAND }};
       # this is 3600 MHz
       dl_absoluteFrequencyPointA                                       = 640008;
       #scs-SpecificCarrierList
         dl_offstToCarrier                                              = 0;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-        dl_subcarrierSpacing                                           = 1;
-        dl_carrierBandwidth                                            = 106;
+        dl_subcarrierSpacing                                           = {{ .DL_SCS }};
+        dl_carrierBandwidth                                            = {{ .DL_CARRIER_BW }};
      #initialDownlinkBWP
       #genericParameters
         # this is RBstart=27,L=48 (275*(L-1))+RBstart
@@ -95,13 +95,13 @@ gNBs =
 
   #uplinkConfigCommon
      #frequencyInfoUL
-      ul_frequencyBand                                              = 78;
+      ul_frequencyBand                                              = {{ .UL_FREQ_BAND }};
       #scs-SpecificCarrierList
       ul_offstToCarrier                                             = 0;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-      ul_subcarrierSpacing                                          = 1;
-      ul_carrierBandwidth                                           = 106;
+      ul_subcarrierSpacing                                          = {{ .UL_SCS }};
+      ul_carrierBandwidth                                           = {{ .UL_CARRIER_BW }};
       pMax                                                          = 20;
      #initialUplinkBWP
       #genericParameters
@@ -272,11 +272,11 @@ gNBs =
     gNB_name  =  "oai-cu-up";
 
     // Tracking area code, 0x0000 and 0xfffe are reserved values
-    tracking_area_code  =  1;
-    plmn_list = ({ mcc = 001; 
-                   mnc = 01; 
-                   mnc_length =2; 
-                   snssaiList = ({ sst = 1, sd = 0xffffff }) 
+    tracking_area_code  =  {{ .TAC }};
+    plmn_list = ({ mcc = {{ .PLMN_MCC }}; 
+                   mnc = {{ .PLMN_MNC }}; 
+                   mnc_length ={{ .PLMN_MNC_LENGTH }}; 
+                   snssaiList = ({ sst = {{ .NSSAI_SST }}, sd = 0x{{ .NSSAI_SD }} }) 
                 });
 
     tr_s_preference = "f1";
@@ -383,15 +383,15 @@ gNBs =
     #frequencyInfoDL
       # this is 3600 MHz + 43 PRBs@30kHz SCS (same as initial BWP)
       absoluteFrequencySSB                                          = 641280;
-      dl_frequencyBand                                                 = 78;
+      dl_frequencyBand                                                 = {{ .DL_FREQ_BAND }};
       # this is 3600 MHz
       dl_absoluteFrequencyPointA                                       = 640008;
       #scs-SpecificCarrierList
         dl_offstToCarrier                                              = 0;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
-        dl_subcarrierSpacing                                           = 1;
-        dl_carrierBandwidth                                            = 106;
+        dl_subcarrierSpacing                                           = {{ .DL_SCS }};
+        dl_carrierBandwidth                                            = {{ .DL_CARRIER_BW }};
      #initialDownlinkBWP
       #genericParameters
         # this is RBstart=27,L=48 (275*(L-1))+RBstart
@@ -405,13 +405,13 @@ gNBs =
 
   #uplinkConfigCommon 
      #frequencyInfoUL
-      ul_frequencyBand                                                 = 78;
+      ul_frequencyBand                                                 = {{ .UL_FREQ_BAND }};
       #scs-SpecificCarrierList
       ul_offstToCarrier                                              = 0;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
-      ul_subcarrierSpacing                                           = 1;
-      ul_carrierBandwidth                                            = 106;
+      ul_subcarrierSpacing                                           = {{ .UL_SCS }};
+      ul_carrierBandwidth                                            = {{ .UL_CARRIER_BW }};
       pMax                                                          = 20;
      #initialUplinkBWP
       #genericParameters
@@ -606,13 +606,25 @@ type configurationTemplateValuesForCuCp struct {
 	PLMN_MNC_LENGTH string
 	NSSAI_SST       int
 	NSSAI_SD        string
+	DL_FREQ_BAND    uint32
+	DL_SCS          uint16
+	DL_CARRIER_BW   uint32
+	UL_FREQ_BAND    uint32
+	UL_SCS          uint16
+	UL_CARRIER_BW   uint32
 }
 
 type configurationTemplateValuesForCuUp struct {
-	E1_IP   string
-	F1U_IP  string
-	N3_IP   string
-	CUCP_E1 string
+	E1_IP           string
+	F1U_IP          string
+	N3_IP           string
+	CUCP_E1         string
+	TAC             uint32
+	PLMN_MCC        string
+	PLMN_MNC        string
+	PLMN_MNC_LENGTH string
+	NSSAI_SST       int
+	NSSAI_SD        string
 }
 
 type configurationTemplateValuesForDu struct {
@@ -626,6 +638,12 @@ type configurationTemplateValuesForDu struct {
 	PLMN_MNC_LENGTH string
 	NSSAI_SST       int
 	NSSAI_SD        string
+	DL_FREQ_BAND    uint32
+	DL_SCS          uint16
+	DL_CARRIER_BW   uint32
+	UL_FREQ_BAND    uint32
+	UL_SCS          uint16
+	UL_CARRIER_BW   uint32
 }
 
 func renderConfigurationTemplateForCuCp(values configurationTemplateValuesForCuCp) (string, error) {

@@ -42,7 +42,7 @@ func GetSupportedProviders() []string {
 }
 
 func GetMandatoryNfKinds() []string {
-	return []string{"PLMN", "RanConfig"}
+	return []string{"PLMN", "RANConfig", "OAIConfig"}
 }
 
 type ConfigInfo struct {
@@ -65,7 +65,7 @@ type NfResource interface {
 	GetServiceAccount() []*corev1.ServiceAccount
 	GetConfigMap(logr.Logger, *workloadv1alpha1.NFDeployment, *ConfigInfo) []*corev1.ConfigMap
 	createNetworkAttachmentDefinitionNetworks(string, *workloadv1alpha1.NFDeploymentSpec) (string, error)
-	GetDeployment(*workloadv1alpha1.NFDeployment) []*appsv1.Deployment
+	GetDeployment(logr.Logger, *workloadv1alpha1.NFDeployment, *ConfigInfo) []*appsv1.Deployment
 	GetService() []*corev1.Service
 }
 
@@ -93,7 +93,7 @@ func (r *RANDeploymentReconciler) CreateAll(log logr.Logger, ctx context.Context
 		}
 	}
 
-	for _, resource := range nfResource.GetDeployment(ranDeployment) {
+	for _, resource := range nfResource.GetDeployment(log, ranDeployment, configInfo) {
 		if resource.ObjectMeta.Namespace == "" {
 			resource.ObjectMeta.Namespace = namespaceProvided
 		}
@@ -138,7 +138,7 @@ func (r *RANDeploymentReconciler) DeleteAll(log logr.Logger, ctx context.Context
 		}
 	}
 
-	for _, resource := range nfResource.GetDeployment(ranDeployment) {
+	for _, resource := range nfResource.GetDeployment(log, ranDeployment, configInfo) {
 		if resource.ObjectMeta.Namespace == "" {
 			resource.ObjectMeta.Namespace = namespaceProvided
 		}

@@ -81,9 +81,9 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 
 	quotedAmfIp := strconv.Quote(amfIp)
 
-	paramsRanNf := &workloadnfconfig.RanConfig{}
-	if err := json.Unmarshal(configInfo.ConfigSelfInfo["RanConfig"].Raw, paramsRanNf); err != nil {
-		log.Error(err, "Cannot Unmarshal RanConfig")
+	paramsRanNf := &workloadnfconfig.RANConfig{}
+	if err := json.Unmarshal(configInfo.ConfigSelfInfo["RANConfig"].Raw, paramsRanNf); err != nil {
+		log.Error(err, "Cannot Unmarshal RANConfig")
 		return nil
 	}
 
@@ -101,6 +101,12 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 		TAC:             paramsPlmn.Spec.PLMNInfo[0].TAC,
 		CELL_ID:         paramsRanNf.Spec.CellIdentity,
 		PHY_CELL_ID:     paramsRanNf.Spec.PhysicalCellID,
+		DL_FREQ_BAND:    paramsRanNf.Spec.DownlinkFrequencyBand,
+		DL_SCS:          paramsRanNf.Spec.DownlinkSubCarrierSpacing,
+		DL_CARRIER_BW:   paramsRanNf.Spec.DownlinkCarrierBandwidth,
+		UL_FREQ_BAND:    paramsRanNf.Spec.UplinkFrequencyBand,
+		UL_SCS:          paramsRanNf.Spec.UplinkSubCarrierSpacing,
+		UL_CARRIER_BW:   paramsRanNf.Spec.UplinkCarrierBandwidth,
 		PLMN_MCC:        paramsPlmn.Spec.PLMNInfo[0].PLMNID.MCC,
 		PLMN_MNC:        paramsPlmn.Spec.PLMNInfo[0].PLMNID.MNC,
 		PLMN_MNC_LENGTH: strconv.Itoa(int(len(paramsPlmn.Spec.PLMNInfo[0].PLMNID.MNC))),
@@ -138,13 +144,19 @@ func (resource CuCpResources) createNetworkAttachmentDefinitionNetworks(template
 	})
 }
 
-func (resource CuCpResources) GetDeployment(ranDeployment *workloadv1alpha1.NFDeployment) []*appsv1.Deployment {
+func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *workloadv1alpha1.NFDeployment, configInfo *ConfigInfo) []*appsv1.Deployment {
 
 	spec := ranDeployment.Spec
 
 	networkAttachmentDefinitionNetworks, err := resource.createNetworkAttachmentDefinitionNetworks(ranDeployment.Name, &spec)
 
 	if err != nil {
+		return nil
+	}
+
+	paramsOAI := &workloadnfconfig.OAIConfig{}
+	if err := json.Unmarshal(configInfo.ConfigSelfInfo["OAIConfig"].Raw, paramsOAI); err != nil {
+		log.Error(err, "Cannot Unmarshal OAIConfig")
 		return nil
 	}
 
@@ -211,7 +223,7 @@ func (resource CuCpResources) GetDeployment(ranDeployment *workloadv1alpha1.NFDe
 									Value: "yes",
 								},
 							},
-							Image: "docker.io/oaisoftwarealliance/oai-gnb:2023.w19",
+							Image: paramsOAI.Spec.Image,
 							Ports: []corev1.ContainerPort{
 
 								corev1.ContainerPort{
