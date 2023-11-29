@@ -35,13 +35,6 @@ var NetworkAttachmentDefinitionGVK = schema.GroupVersionKind{
 	Version: "v1",
 }
 
-type networkAttachmentDefinitionNetwork struct {
-	Name      string `json:"name"`
-	Interface string `json:"interface"`
-	IP        string `json:"ip"`
-	Gateway   string `json:"gateway"`
-}
-
 func CreateNetworkAttachmentDefinitionNetworks(templateName string, interfaceConfigs map[string][]workloadv1alpha1.InterfaceConfig) (string, error) {
 
 	interfaceNames := make([]string, 0, len(interfaceConfigs))
