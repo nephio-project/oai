@@ -1,9 +1,12 @@
 GO_VERSION ?= 1.20.5
 GOLANG_CI_VER ?= v1.52
 GOSEC_VER ?= 2.15.0
+MOCKERY_VERSION=2.37.1
 TEST_COVERAGE_FILE=lcov.info
 TEST_COVERAGE_HTML_FILE=coverage_unit.html
 TEST_COVERAGE_FUNC_FILE=func_coverage.out
+OS_ARCH ?= $(shell uname -m)
+OS ?= $(shell uname)
 
 # CONTAINER_RUNNABLE checks if tests and lint check can be run inside container.
 PODMAN ?= $(shell podman -v > /dev/null 2>&1; echo $$?)
@@ -82,6 +85,22 @@ ifeq ($(CONTAINER_RUNNABLE), 0)
 	$(CONTAINER_RUNTIME) run -it -v ${PWD}:/go/src -w /go/src docker.io/securego/gosec:${GOSEC_VER} ./...
 else
 	gosec ./...
+endif
+
+.PHONY: install-mockery
+install-mockery: ## install mockery
+ifeq ($(CONTAINER_RUNNABLE), 0)
+		$(CONTAINER_RUNTIME) pull docker.io/vektra/mockery:v${MOCKERY_VERSION}
+else
+		wget -qO- https://github.com/vektra/mockery/releases/download/v${MOCKERY_VERSION}/mockery_${MOCKERY_VERSION}_${OS}_${OS_ARCH}.tar.gz | sudo tar -xvzf - -C /usr/local/bin
+endif
+
+.PHONY: generate-mocks
+generate-mocks:
+ifeq ($(CONTAINER_RUNNABLE), 0)
+		sudo $(CONTAINER_RUNTIME) run --security-opt label=disable -v ${PWD}:/src -w /src docker.io/vektra/mockery:v${MOCKERY_VERSION}
+else
+		mockery
 endif
 
 .PHONY: unit
