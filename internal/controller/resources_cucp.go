@@ -24,6 +24,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	workloadnfconfig "workload.nephio.org/ran_deployment/api/v1alpha1"
 )
 
@@ -172,7 +173,7 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 		},
 		Spec: appsv1.DeploymentSpec{
 			Paused:   false,
-			Replicas: int32Ptr(1),
+			Replicas: pointer.Int32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/name": "oai-gnb-cu-cp",
@@ -194,7 +195,7 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 
 						corev1.Container{
 							SecurityContext: &corev1.SecurityContext{
-								Privileged: boolPtr(true),
+								Privileged: pointer.Bool(true),
 							},
 							Stdin:     false,
 							StdinOnce: false,
@@ -261,7 +262,7 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 							},
 						},
 					},
-					TerminationGracePeriodSeconds: int64Ptr(5),
+					TerminationGracePeriodSeconds: pointer.Int64(5),
 					HostIPC:                       false,
 					RestartPolicy:                 corev1.RestartPolicy("Always"),
 					SchedulerName:                 "default-scheduler",

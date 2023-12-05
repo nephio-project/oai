@@ -27,6 +27,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 type CuUpResources struct {
@@ -67,7 +68,7 @@ func (resource CuUpResources) GetDeployment(log logr.Logger, ranDeployment *work
 		},
 		Spec: appsv1.DeploymentSpec{
 			Paused:   false,
-			Replicas: int32Ptr(1),
+			Replicas: pointer.Int32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/name": "oai-gnb-cu-up",
@@ -89,7 +90,7 @@ func (resource CuUpResources) GetDeployment(log logr.Logger, ranDeployment *work
 					HostNetwork:                   false,
 					HostPID:                       false,
 					RestartPolicy:                 corev1.RestartPolicy("Always"),
-					TerminationGracePeriodSeconds: int64Ptr(5),
+					TerminationGracePeriodSeconds: pointer.Int64(5),
 					Containers: []corev1.Container{
 
 						corev1.Container{
@@ -136,7 +137,7 @@ func (resource CuUpResources) GetDeployment(log logr.Logger, ranDeployment *work
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
-								Privileged: boolPtr(true),
+								Privileged: pointer.Bool(true),
 							},
 							Stdin:     false,
 							StdinOnce: false,

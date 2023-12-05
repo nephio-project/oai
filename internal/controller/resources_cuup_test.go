@@ -30,13 +30,13 @@ import (
 	workloadnfconfig "workload.nephio.org/ran_deployment/api/v1alpha1"
 )
 
-func TestCreateNetworkAttachmentDefinitionNetworksCuCP(t *testing.T) {
+func TestCreateNetworkAttachmentDefinitionNetworksCuUP(t *testing.T) {
 	/*
 		Since CreateNetworkAttachmentDefinitionNetworks are rigorously tested in the network_attachment_defination_tests in which error handling is tested
 		Therefore, Here testing only the normal cases
 	*/
 	dummyNfSpec := workloadv1alpha1.NFDeploymentSpec{
-		Provider:   "cucp.openairinterface.org",
+		Provider:   "cuup.openairinterface.org",
 		Interfaces: []workloadv1alpha1.InterfaceConfig{},
 	}
 
@@ -49,20 +49,19 @@ func TestCreateNetworkAttachmentDefinitionNetworksCuCP(t *testing.T) {
 				{
 					Name: "e1",
 					IPv4: &workloadv1alpha1.IPv4{
-						Address: "172.5.3.6/24",
-						Gateway: pointer.String("172.7.1.1"),
+						Address: "172.5.5.7/24",
+						Gateway: pointer.String("172.5.1.2"),
 					},
-					VLANID: uint16Ptr(2),
-				},
-				{
-					Name: "f1c",
+					VLANID: uint16Ptr(3),
+				}, {
+					Name: "f1u",
 					IPv4: &workloadv1alpha1.IPv4{
 						Address: "172.5.1.3/24",
 						Gateway: pointer.String("172.5.1.1"),
 					},
 					VLANID: uint16Ptr(2),
 				}, {
-					Name: "n2",
+					Name: "n3",
 					IPv4: &workloadv1alpha1.IPv4{
 						Address: "172.6.0.254/24",
 						Gateway: pointer.String("172.6.0.1"),
@@ -74,40 +73,40 @@ func TestCreateNetworkAttachmentDefinitionNetworksCuCP(t *testing.T) {
 				{
 				 "name": "abc-e1",
 				 "interface": "e1",
-				 "ips": ["172.5.3.6/24"],
-				 "gateways": ["172.7.1.1"]
+				 "ips": ["172.5.5.7/24"],
+				 "gateways": ["172.5.1.2"]
 				},		  
 				{
-				 "name": "abc-f1c",
-				 "interface": "f1c",
+				 "name": "abc-f1u",
+				 "interface": "f1u",
 				 "ips": ["172.5.1.3/24"],
 				 "gateways": ["172.5.1.1"]
 				},
 				{
-				 "name": "abc-n2",
-				 "interface": "n2",
+				 "name": "abc-n3",
+				 "interface": "n3",
 				 "ips": ["172.6.0.254/24"],
 				 "gateways": ["172.6.0.1"]
 				}
 			   ] `,
 		},
 	}
-	cucpResource := CuCpResources{}
+	cuupResource := CuUpResources{}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			dummyNfSpec.Interfaces = tc.inputInterfaceConfig
-			got, err := cucpResource.createNetworkAttachmentDefinitionNetworks("abc", &dummyNfSpec)
+			got, err := cuupResource.createNetworkAttachmentDefinitionNetworks("abc", &dummyNfSpec)
 			if err != nil {
-				t.Errorf("CucpResource| createNetworkAttachmentDefinitionNetworks Error %v ", err)
+				t.Errorf("CuupResource| createNetworkAttachmentDefinitionNetworks Error %v ", err)
 			}
 			if !compareStringLineByLineTrimmed(got, tc.want) {
-				t.Errorf("CucpResource| createNetworkAttachmentDefinitionNetworks returned %s wanted %s", got, tc.want)
+				t.Errorf("CuupResource| createNetworkAttachmentDefinitionNetworks returned %s wanted %s", got, tc.want)
 			}
 		})
 	}
 }
 
-func TestGetDeploymentCuCp(t *testing.T) {
+func TestGetDeploymentCuUp(t *testing.T) {
 	//Since we have done rigrous testing of createNetworkAttachmentDefinitionNetworks(), so, we are skipping corner-cases for that function
 	logger := log.Log
 	cases := map[string]struct {
@@ -122,7 +121,7 @@ func TestGetDeploymentCuCp(t *testing.T) {
 					Namespace: "dummy-du-ns",
 				},
 				Spec: workloadv1alpha1.NFDeploymentSpec{
-					Provider: "cucp.openairinterface.org",
+					Provider: "cuup.openairinterface.org",
 					Interfaces: []workloadv1alpha1.InterfaceConfig{
 						{
 							Name: "e1",
@@ -132,14 +131,14 @@ func TestGetDeploymentCuCp(t *testing.T) {
 							},
 							VLANID: uint16Ptr(2),
 						}, {
-							Name: "n2",
+							Name: "n3",
 							IPv4: &workloadv1alpha1.IPv4{
 								Address: "172.6.0.254/24",
 								Gateway: pointer.String("172.6.0.1"),
 							},
 							VLANID: uint16Ptr(6),
 						}, {
-							Name: "f1c",
+							Name: "f1u",
 							IPv4: &workloadv1alpha1.IPv4{
 								Address: "172.6.0.7/24",
 								Gateway: pointer.String("172.6.0.1"),
@@ -156,7 +155,6 @@ func TestGetDeploymentCuCp(t *testing.T) {
 					},
 				},
 			},
-
 			want: "Pod-Annotations",
 		},
 		"NAD Error": {
@@ -176,8 +174,7 @@ func TestGetDeploymentCuCp(t *testing.T) {
 					},
 				},
 			},
-			configInfo: &ConfigInfo{},
-			want:       "error",
+			want: "error",
 		},
 		"OAI-Config Unmarshal Error": {
 			ranDeployment: workloadv1alpha1.NFDeployment{
@@ -186,7 +183,7 @@ func TestGetDeploymentCuCp(t *testing.T) {
 					Namespace: "dummy-du-ns",
 				},
 				Spec: workloadv1alpha1.NFDeploymentSpec{
-					Provider: "cucp.openairinterface.org",
+					Provider: "cuup.openairinterface.org",
 					Interfaces: []workloadv1alpha1.InterfaceConfig{
 						{
 							Name: "e1",
@@ -196,14 +193,14 @@ func TestGetDeploymentCuCp(t *testing.T) {
 							},
 							VLANID: uint16Ptr(2),
 						}, {
-							Name: "n2",
+							Name: "n3",
 							IPv4: &workloadv1alpha1.IPv4{
 								Address: "172.6.0.254/24",
 								Gateway: pointer.String("172.6.0.1"),
 							},
 							VLANID: uint16Ptr(6),
 						}, {
-							Name: "f1c",
+							Name: "f1u",
 							IPv4: &workloadv1alpha1.IPv4{
 								Address: "172.6.0.7/24",
 								Gateway: pointer.String("172.6.0.1"),
@@ -220,15 +217,14 @@ func TestGetDeploymentCuCp(t *testing.T) {
 					},
 				},
 			},
-
 			want: "error",
 		},
 	}
 
-	cucpResource := CuCpResources{}
+	cuupResource := CuUpResources{}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := cucpResource.GetDeployment(logger, &tc.ranDeployment, tc.configInfo)
+			got := cuupResource.GetDeployment(logger, &tc.ranDeployment, tc.configInfo)
 			if tc.want == "error" {
 				if got != nil {
 					t.Errorf("GetDeployment returned %v wanted nil", got)
@@ -254,13 +250,13 @@ func TestGetDeploymentCuCp(t *testing.T) {
 
 }
 
-func TestGetServiceAccountCuCp(t *testing.T) {
+func TestGetServiceAccountCuUp(t *testing.T) {
 
-	cucpResource := CuCpResources{}
-	actual := cucpResource.GetServiceAccount()
+	cuUpResource := CuUpResources{}
+	actual := cuUpResource.GetServiceAccount()
 	serviceAccount := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "oai-gnb-cu-cp-sa",
+			Name: "oai-gnb-cu-up-sa",
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -273,25 +269,44 @@ func TestGetServiceAccountCuCp(t *testing.T) {
 	}
 }
 
-func TestGetServiceCuCp(t *testing.T) {
-	cucpResource := CuCpResources{}
-	got := cucpResource.GetService()
-	/*
-		More cases will be added when more code will be added to GetService
-	*/
-	if got == nil {
-		t.Errorf("GetService returned nil ")
+func TestGetConfigMapCuUp(t *testing.T) {
+	defaultParamsPlmn := workloadnfconfig.PLMN{
+		Spec: workloadnfconfig.PLMNSpec{
+			PLMNInfo: []workloadnfconfig.PLMNInfo{
+				{
+					PLMNID: workloadnfconfig.PLMNID{
+						MCC: "001",
+						MNC: "01",
+					},
+					TAC: 1,
+					NSSAI: []workloadnfconfig.NSSAI{
+						{
+							SST: 1,
+							SD:  pointer.String("ffffff"),
+						},
+					},
+				},
+			},
+		},
 	}
+	defaultConfiguration, _ := renderConfigurationTemplateForCuUp(configurationTemplateValuesForCuUp{
+		E1_IP:           "\"172.5.1.3\"",
+		F1U_IP:          "\"172.6.0.7\"",
+		N3_IP:           "\"172.6.0.254\"",
+		CUCP_E1:         "\"172.5.1.3\"",
+		TAC:             defaultParamsPlmn.Spec.PLMNInfo[0].TAC,
+		PLMN_MCC:        defaultParamsPlmn.Spec.PLMNInfo[0].PLMNID.MCC,
+		PLMN_MNC:        defaultParamsPlmn.Spec.PLMNInfo[0].PLMNID.MNC,
+		PLMN_MNC_LENGTH: strconv.Itoa(int(len(defaultParamsPlmn.Spec.PLMNInfo[0].PLMNID.MNC))),
+		NSSAI_SST:       defaultParamsPlmn.Spec.PLMNInfo[0].NSSAI[0].SST,
+		NSSAI_SD:        *defaultParamsPlmn.Spec.PLMNInfo[0].NSSAI[0].SD,
+	})
 
-}
-
-func TestGetConfigMapCuCp(t *testing.T) {
 	cases := map[string]struct {
 		ranDeploymentSpec      workloadv1alpha1.NFDeploymentSpec
 		configNfDeploymentSpec workloadv1alpha1.NFDeploymentSpec
-		paramsRanNf            workloadnfconfig.RANConfig
-		paramsPlmn             workloadnfconfig.PLMN
-		wantedError            string
+		configSelfInfo         map[string]runtime.RawExtension
+		wantedConfiguration    string
 	}{
 		"Normal": {
 			ranDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{
@@ -304,14 +319,14 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						},
 						VLANID: uint16Ptr(2),
 					}, {
-						Name: "n2",
+						Name: "n3",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
 							Gateway: pointer.String("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(6),
 					}, {
-						Name: "f1c",
+						Name: "f1u",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.7/24",
 							Gateway: pointer.String("172.6.0.1"),
@@ -321,10 +336,10 @@ func TestGetConfigMapCuCp(t *testing.T) {
 				},
 			},
 			configNfDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{
-				Provider: "amf.openairinterface.org",
+				Provider: "cucp.openairinterface.org",
 				Interfaces: []workloadv1alpha1.InterfaceConfig{
 					{
-						Name: "n2",
+						Name: "e1",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.5.1.3/24",
 							Gateway: pointer.String("172.5.1.1"),
@@ -333,45 +348,22 @@ func TestGetConfigMapCuCp(t *testing.T) {
 					},
 				},
 			},
-			paramsRanNf: workloadnfconfig.RANConfig{
-				Spec: workloadnfconfig.RANConfigSpec{
-					CellIdentity:   "12345678L",
-					PhysicalCellID: uint32(0),
-				},
+			configSelfInfo: map[string]runtime.RawExtension{
+				"PLMN": runtime.RawExtension{Raw: marshalJsonReturnByteOnly(defaultParamsPlmn)},
 			},
-			paramsPlmn: workloadnfconfig.PLMN{
-				Spec: workloadnfconfig.PLMNSpec{
-					PLMNInfo: []workloadnfconfig.PLMNInfo{
-						{
-							PLMNID: workloadnfconfig.PLMNID{
-								MCC: "001",
-								MNC: "01",
-							},
-							TAC: 1,
-							NSSAI: []workloadnfconfig.NSSAI{
-								{
-									SST: 1,
-									SD:  pointer.String("ffffff"),
-								},
-							},
-						},
-					},
-				},
-			},
-			wantedError: "nil",
+			wantedConfiguration: defaultConfiguration,
 		},
-		"N2 Not Provided": {
+		"N3 Not Provided": {
 			ranDeploymentSpec:      workloadv1alpha1.NFDeploymentSpec{},
 			configNfDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{},
-			paramsRanNf:            workloadnfconfig.RANConfig{},
-			paramsPlmn:             workloadnfconfig.PLMN{},
-			wantedError:            "N2 Not Provided",
+			configSelfInfo:         nil,
+			wantedConfiguration:    "nil",
 		},
 		"E1 Not Provided": {
 			ranDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{
 				Interfaces: []workloadv1alpha1.InterfaceConfig{
 					{
-						Name: "n2",
+						Name: "n3",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
 							Gateway: pointer.String("172.6.0.1"),
@@ -380,12 +372,11 @@ func TestGetConfigMapCuCp(t *testing.T) {
 					},
 				},
 			},
+			configSelfInfo:         nil,
 			configNfDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{},
-			paramsRanNf:            workloadnfconfig.RANConfig{},
-			paramsPlmn:             workloadnfconfig.PLMN{},
-			wantedError:            "E1 Not Provided",
+			wantedConfiguration:    "nil",
 		},
-		"F1c NOt Provided": {
+		"F1u NOt Provided": {
 			ranDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{
 				Interfaces: []workloadv1alpha1.InterfaceConfig{
 					{
@@ -396,7 +387,7 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						},
 						VLANID: uint16Ptr(2),
 					}, {
-						Name: "n2",
+						Name: "n3",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
 							Gateway: pointer.String("172.6.0.1"),
@@ -405,10 +396,9 @@ func TestGetConfigMapCuCp(t *testing.T) {
 					},
 				},
 			},
+			configSelfInfo:         nil,
 			configNfDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{},
-			paramsRanNf:            workloadnfconfig.RANConfig{},
-			paramsPlmn:             workloadnfconfig.PLMN{},
-			wantedError:            "F1c NOt Provided",
+			wantedConfiguration:    "nil",
 		},
 		"configNfDeployment not set": {
 			ranDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{
@@ -421,14 +411,14 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						},
 						VLANID: uint16Ptr(2),
 					}, {
-						Name: "n2",
+						Name: "n3",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
 							Gateway: pointer.String("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(6),
 					}, {
-						Name: "f1c",
+						Name: "f1u",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.7/24",
 							Gateway: pointer.String("172.6.0.1"),
@@ -437,12 +427,11 @@ func TestGetConfigMapCuCp(t *testing.T) {
 					},
 				},
 			},
-			configNfDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{Provider: "amf.openairinterface.org"},
-			paramsRanNf:            workloadnfconfig.RANConfig{},
-			paramsPlmn:             workloadnfconfig.PLMN{},
-			wantedError:            "configNfDeployment not set",
+			configNfDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{Provider: "cucp.openairinterface.org"},
+			configSelfInfo:         nil,
+			wantedConfiguration:    "nil",
 		},
-		"RANConfig Marshal Error": {
+		"configSelfInfo Unmarshal Error": {
 			ranDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{
 				Interfaces: []workloadv1alpha1.InterfaceConfig{
 					{
@@ -453,14 +442,14 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						},
 						VLANID: uint16Ptr(2),
 					}, {
-						Name: "n2",
+						Name: "n3",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
 							Gateway: pointer.String("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(6),
 					}, {
-						Name: "f1c",
+						Name: "f1u",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.7/24",
 							Gateway: pointer.String("172.6.0.1"),
@@ -470,24 +459,7 @@ func TestGetConfigMapCuCp(t *testing.T) {
 				},
 			},
 			configNfDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{
-				Provider: "amf.openairinterface.org",
-				Interfaces: []workloadv1alpha1.InterfaceConfig{
-					{
-						Name: "n2",
-						IPv4: &workloadv1alpha1.IPv4{
-							Address: "172.5.1.3/24",
-							Gateway: pointer.String("172.5.1.1"),
-						},
-						VLANID: uint16Ptr(2),
-					},
-				},
-			},
-			paramsRanNf: workloadnfconfig.RANConfig{},
-			paramsPlmn:  workloadnfconfig.PLMN{},
-			wantedError: "RANConfig Marshal Error",
-		},
-		"PLMN Marshal Error": {
-			ranDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{
+				Provider: "cucp.openairinterface.org",
 				Interfaces: []workloadv1alpha1.InterfaceConfig{
 					{
 						Name: "e1",
@@ -496,44 +468,18 @@ func TestGetConfigMapCuCp(t *testing.T) {
 							Gateway: pointer.String("172.5.1.1"),
 						},
 						VLANID: uint16Ptr(2),
-					}, {
-						Name: "n2",
-						IPv4: &workloadv1alpha1.IPv4{
-							Address: "172.6.0.254/24",
-							Gateway: pointer.String("172.6.0.1"),
-						},
-						VLANID: uint16Ptr(6),
-					}, {
-						Name: "f1c",
-						IPv4: &workloadv1alpha1.IPv4{
-							Address: "172.6.0.7/24",
-							Gateway: pointer.String("172.6.0.1"),
-						},
-						VLANID: uint16Ptr(7),
 					},
 				},
 			},
-			configNfDeploymentSpec: workloadv1alpha1.NFDeploymentSpec{
-				Provider: "amf.openairinterface.org",
-				Interfaces: []workloadv1alpha1.InterfaceConfig{
-					{
-						Name: "n2",
-						IPv4: &workloadv1alpha1.IPv4{
-							Address: "172.5.1.3/24",
-							Gateway: pointer.String("172.5.1.1"),
-						},
-						VLANID: uint16Ptr(2),
-					},
-				},
+			configSelfInfo: map[string]runtime.RawExtension{
+				"PLMN": runtime.RawExtension{Raw: []byte(" ")},
 			},
-			paramsRanNf: workloadnfconfig.RANConfig{},
-			paramsPlmn:  workloadnfconfig.PLMN{},
-			wantedError: "PLMN Marshal Error",
+			wantedConfiguration: "nil",
 		},
 	}
 
 	logger := log.Log
-	cuCpResource := CuCpResources{}
+	cuUpResource := CuUpResources{}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			ranDeploymentDummy := workloadv1alpha1.NFDeployment{
@@ -552,52 +498,35 @@ func TestGetConfigMapCuCp(t *testing.T) {
 					},
 				},
 			}
+
 			configInfo := ConfigInfo{
-				ConfigRefInfo: configInstanceMap,
-				ConfigSelfInfo: map[string]runtime.RawExtension{
-					"RANConfig": runtime.RawExtension{Raw: marshalJsonReturnByteOnly(tc.paramsRanNf)},
-					"PLMN":      runtime.RawExtension{Raw: marshalJsonReturnByteOnly(tc.paramsPlmn)},
-				},
-			}
-			// Simulating JSON UnMarshal Error:
-			if tc.wantedError == "RANConfig Marshal Error" {
-				configInfo.ConfigSelfInfo["RANConfig"] = runtime.RawExtension{Raw: []byte("")}
-			} else if tc.wantedError == "PLMN Marshal Error" {
-				configInfo.ConfigSelfInfo["PLMN"] = runtime.RawExtension{Raw: []byte("")}
+				ConfigRefInfo:  configInstanceMap,
+				ConfigSelfInfo: tc.configSelfInfo,
 			}
 
-			got := cuCpResource.GetConfigMap(logger, &ranDeploymentDummy, &configInfo)
-			if tc.wantedError == "nil" {
-				defaultWantConfigurations, _ := renderConfigurationTemplateForCuCp(configurationTemplateValuesForCuCp{
-					E1_IP:           "\"172.5.1.3\"",
-					F1C_IP:          "\"172.6.0.7\"",
-					N2_IP:           "\"172.6.0.254\"",
-					AMF_IP:          "\"172.5.1.3\"",
-					TAC:             tc.paramsPlmn.Spec.PLMNInfo[0].TAC,
-					CELL_ID:         tc.paramsRanNf.Spec.CellIdentity,
-					PHY_CELL_ID:     tc.paramsRanNf.Spec.PhysicalCellID,
-					DL_FREQ_BAND:    tc.paramsRanNf.Spec.DownlinkFrequencyBand,
-					DL_SCS:          tc.paramsRanNf.Spec.DownlinkSubCarrierSpacing,
-					DL_CARRIER_BW:   tc.paramsRanNf.Spec.DownlinkCarrierBandwidth,
-					UL_FREQ_BAND:    tc.paramsRanNf.Spec.UplinkFrequencyBand,
-					UL_SCS:          tc.paramsRanNf.Spec.UplinkSubCarrierSpacing,
-					UL_CARRIER_BW:   tc.paramsRanNf.Spec.UplinkCarrierBandwidth,
-					PLMN_MCC:        tc.paramsPlmn.Spec.PLMNInfo[0].PLMNID.MCC,
-					PLMN_MNC:        tc.paramsPlmn.Spec.PLMNInfo[0].PLMNID.MNC,
-					PLMN_MNC_LENGTH: strconv.Itoa(int(len(tc.paramsPlmn.Spec.PLMNInfo[0].PLMNID.MNC))),
-					NSSAI_SST:       tc.paramsPlmn.Spec.PLMNInfo[0].NSSAI[0].SST,
-					NSSAI_SD:        *tc.paramsPlmn.Spec.PLMNInfo[0].NSSAI[0].SD,
-				})
-
-				if !reflect.DeepEqual(got[0].Data["mounted.conf"], defaultWantConfigurations) {
-					t.Errorf("GetConfigMap returned %s Wanted %s", got[0].Data["mounted.conf"], defaultWantConfigurations)
+			got := cuUpResource.GetConfigMap(logger, &ranDeploymentDummy, &configInfo)
+			if tc.wantedConfiguration == "nil" {
+				if got != nil {
+					t.Errorf("GetConfigMap CuUp returned %v  Wanted nil", got)
 				}
 			} else {
-				if got != nil {
-					t.Errorf("GetConfigMap returned %v wanted nil (Error Scenario)", got)
+				if got[0].Data["mounted.conf"] != tc.wantedConfiguration {
+					t.Errorf("GetConfigMap CuUp returned %v  Wanted %v", got[0].Data["mounted.conf"], tc.wantedConfiguration)
 				}
 			}
 
 		})
 	}
+}
+
+func TestGetServiceCuUp(t *testing.T) {
+	cuupResource := CuUpResources{}
+	got := cuupResource.GetService()
+	/*
+		More cases will be added when more code will be added to GetService
+	*/
+	if got == nil {
+		t.Errorf("GetService returned nil ")
+	}
+
 }

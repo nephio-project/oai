@@ -69,7 +69,9 @@ type NfResource interface {
 	GetService() []*corev1.Service
 }
 
-func (r *RANDeploymentReconciler) CreateAll(log logr.Logger, ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment, nfResource NfResource, configInfo *ConfigInfo) {
+func (r *RANDeploymentReconciler) CreateAll(ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment, nfResource NfResource, configInfo *ConfigInfo) {
+	namespacedName := types.NamespacedName{Namespace: ranDeployment.Namespace, Name: ranDeployment.Name}
+	logger := log.FromContext(ctx).WithValues("RANDeployment", namespacedName)
 	var err error
 	namespaceProvided := ranDeployment.Namespace
 
@@ -79,27 +81,27 @@ func (r *RANDeploymentReconciler) CreateAll(log logr.Logger, ctx context.Context
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
-			log.Error(err, "Error During Creating resource of GetServiceAccount()")
+			logger.Error(err, "Error During Creating resource of GetServiceAccount()")
 		}
 	}
 
-	for _, resource := range nfResource.GetConfigMap(log, ranDeployment, configInfo) {
+	for _, resource := range nfResource.GetConfigMap(logger, ranDeployment, configInfo) {
 		if resource.ObjectMeta.Namespace == "" {
 			resource.ObjectMeta.Namespace = namespaceProvided
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
-			log.Error(err, "Error During Creating resource of GetConfigMap()")
+			logger.Error(err, "Error During Creating resource of GetConfigMap()")
 		}
 	}
 
-	for _, resource := range nfResource.GetDeployment(log, ranDeployment, configInfo) {
+	for _, resource := range nfResource.GetDeployment(logger, ranDeployment, configInfo) {
 		if resource.ObjectMeta.Namespace == "" {
 			resource.ObjectMeta.Namespace = namespaceProvided
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
-			log.Error(err, "Error During Creating resource of GetDeployment()")
+			logger.Error(err, "Error During Creating resource of GetDeployment()")
 		}
 	}
 	for _, resource := range nfResource.GetService() {
@@ -108,13 +110,15 @@ func (r *RANDeploymentReconciler) CreateAll(log logr.Logger, ctx context.Context
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
-			log.Error(err, "Error During Creating resource of GetService()")
+			logger.Error(err, "Error During Creating resource of GetService()")
 		}
 	}
 
 }
 
-func (r *RANDeploymentReconciler) DeleteAll(log logr.Logger, ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment, nfResource NfResource, configInfo *ConfigInfo) {
+func (r *RANDeploymentReconciler) DeleteAll(ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment, nfResource NfResource, configInfo *ConfigInfo) {
+	namespacedName := types.NamespacedName{Namespace: ranDeployment.Namespace, Name: ranDeployment.Name}
+	logger := log.FromContext(ctx).WithValues("RANDeployment", namespacedName)
 	var err error
 	namespaceProvided := ranDeployment.Namespace
 
@@ -124,27 +128,27 @@ func (r *RANDeploymentReconciler) DeleteAll(log logr.Logger, ctx context.Context
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
-			log.Error(err, "Error During Deleting resource of GetServiceAccount()")
+			logger.Error(err, "Error During Deleting resource of GetServiceAccount()")
 		}
 	}
 
-	for _, resource := range nfResource.GetConfigMap(log, ranDeployment, configInfo) {
+	for _, resource := range nfResource.GetConfigMap(logger, ranDeployment, configInfo) {
 		if resource.ObjectMeta.Namespace == "" {
 			resource.ObjectMeta.Namespace = namespaceProvided
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
-			log.Error(err, "Error During Deleting resource of GetConfigMap()")
+			logger.Error(err, "Error During Deleting resource of GetConfigMap()")
 		}
 	}
 
-	for _, resource := range nfResource.GetDeployment(log, ranDeployment, configInfo) {
+	for _, resource := range nfResource.GetDeployment(logger, ranDeployment, configInfo) {
 		if resource.ObjectMeta.Namespace == "" {
 			resource.ObjectMeta.Namespace = namespaceProvided
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
-			log.Error(err, "Error During Deleting resource of GetDeployment()")
+			logger.Error(err, "Error During Deleting resource of GetDeployment()")
 		}
 
 	}
@@ -155,61 +159,63 @@ func (r *RANDeploymentReconciler) DeleteAll(log logr.Logger, ctx context.Context
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
-			log.Error(err, "Error During Deleting resource of GetService()")
+			logger.Error(err, "Error During Deleting resource of GetService()")
 		}
 
 	}
 
 }
 
-func (r *RANDeploymentReconciler) GetConfigs(log logr.Logger, ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment) (*ConfigInfo, error) {
+func (r *RANDeploymentReconciler) GetConfigs(ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment) (*ConfigInfo, error) {
+	namespacedName := types.NamespacedName{Namespace: ranDeployment.Namespace, Name: ranDeployment.Name}
+	logger := log.FromContext(ctx).WithValues("RANDeployment", namespacedName)
 
 	configsList := ranDeployment.Spec.ParametersRefs
 	configInfo := NewConfigInfo()
 	for _, configItem := range configsList {
 
-		log.Info("Config: ", "config.Name", configItem.Name)
+		logger.Info("Config: ", "config.Name", configItem.Name)
 		if configItem.APIVersion == "ref.nephio.org/v1alpha1" {
 			configInstance := &configref.Config{}
 			if err := r.Get(ctx, types.NamespacedName{Name: *configItem.Name, Namespace: ranDeployment.Namespace}, configInstance); err != nil {
-				log.Error(err, "Config ref get error")
+				logger.Error(err, "Config ref get error")
 				return configInfo, err
 			}
-			log.Info("Config ref:", "configInstance.Name", configInstance.Name)
+			logger.Info("Config ref:", "configInstance.Name", configInstance.Name)
 			var result map[string]any
 			if err := json.Unmarshal(configInstance.Spec.Config.Raw, &result); err != nil {
-				log.Error(err, "Unmarshal error")
+				logger.Error(err, "Unmarshal error")
 				return configInfo, err
 			}
-			log.Info("Config ref:", "configInstance.Kind", result["kind"].(string))
+			logger.Info("Config ref:", "configInstance.Kind", result["kind"].(string))
 			kindInfo := result["kind"].(string)
 			configInfo.ConfigRefInfo[kindInfo] = append(configInfo.ConfigRefInfo[kindInfo], configInstance)
 		} else if configItem.APIVersion == "workload.nephio.org/v1alpha1" {
 			configInstance := &workloadv1alpha1.NFConfig{}
 			if err := r.Get(ctx, types.NamespacedName{Name: *configItem.Name, Namespace: ranDeployment.Namespace}, configInstance); err != nil {
-				log.Error(err, "Config for Self get error")
+				logger.Error(err, "Config for Self get error")
 				return configInfo, err
 			}
-			log.Info("Config for Self:", "configInstance.Name", configInstance.Name)
+			logger.Info("Config for Self:", "configInstance.Name", configInstance.Name)
 			for _, configNf := range configInstance.Spec.ConfigRefs {
 				var result map[string]any
 				if err := json.Unmarshal(configNf.Raw, &result); err != nil {
-					log.Error(err, "Unmarshal error")
+					logger.Error(err, "Unmarshal error")
 					return configInfo, err
 				}
-				log.Info("Config for Self:", "configInstance.Kind", result["kind"].(string))
+				logger.Info("Config for Self:", "configInstance.Kind", result["kind"].(string))
 				kindInfo := result["kind"].(string)
 				configInfo.ConfigSelfInfo[kindInfo] = configNf
 			}
 
 			if !CheckMandatoryKinds(configInfo.ConfigSelfInfo) {
 				err := fmt.Errorf("Not all mandatory Kinds available")
-				log.Error(err, "Config for Self get error")
+				logger.Error(err, "Config for Self get error")
 				return configInfo, err
 			}
 		} else {
 			err := fmt.Errorf("Not supported API version %q", configItem.APIVersion)
-			log.Error(err, "Config for Self get error")
+			logger.Error(err, "Config for Self get error")
 			return configInfo, err
 		}
 	}
@@ -250,7 +256,7 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 	logger.Info("RANDeployment", "RANDeployment CR", instance.Spec)
 
-	configInfo, err := r.GetConfigs(logger, ctx, instance)
+	configInfo, err := r.GetConfigs(ctx, instance)
 	if err != nil || configInfo == nil {
 		logger.Error(err, "Failed to get required ConfigInfo")
 		return ctrl.Result{}, err
@@ -267,17 +273,17 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			case "cucp.openairinterface.org":
 				logger.Info("--- Creation for CUCP")
 				cucpResource := CuCpResources{}
-				r.CreateAll(logger, ctx, instance, cucpResource, configInfo)
+				r.CreateAll(ctx, instance, cucpResource, configInfo)
 				logger.Info("--- CUCP Created")
 			case "cuup.openairinterface.org":
 				logger.Info("--- Creation for CUUP")
 				cuupResource := CuUpResources{}
-				r.CreateAll(logger, ctx, instance, cuupResource, configInfo)
+				r.CreateAll(ctx, instance, cuupResource, configInfo)
 				logger.Info("--- CUUP Created")
 			case "du.openairinterface.org":
 				logger.Info("--- Creation for DU")
 				duResource := DuResources{}
-				r.CreateAll(logger, ctx, instance, duResource, configInfo)
+				r.CreateAll(ctx, instance, duResource, configInfo)
 				logger.Info("--- DU Created")
 
 			}
@@ -294,17 +300,17 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			case "cucp.openairinterface.org":
 				logger.Info("--- Deletion for CUCP")
 				cucpResource := CuCpResources{}
-				r.DeleteAll(logger, ctx, instance, cucpResource, configInfo)
+				r.DeleteAll(ctx, instance, cucpResource, configInfo)
 				logger.Info("--- CUCP Deleted")
 			case "cuup.openairinterface.org":
 				logger.Info("--- Deletion for CUUP")
 				cuupResource := CuUpResources{}
-				r.DeleteAll(logger, ctx, instance, cuupResource, configInfo)
+				r.DeleteAll(ctx, instance, cuupResource, configInfo)
 				logger.Info("--- CUUP Deleted")
 			case "du.openairinterface.org":
 				logger.Info("--- Deletion for DU")
 				duResource := DuResources{}
-				r.DeleteAll(logger, ctx, instance, duResource, configInfo)
+				r.DeleteAll(ctx, instance, duResource, configInfo)
 				logger.Info("--- DU Deleted")
 
 			}

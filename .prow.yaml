@@ -11,7 +11,6 @@ presubmits:
         - "-c"
         - |
           make unit
-presubmits:
   - name: oai-operator-lint
     decorate: true
     run_if_changed: "^.*.go$"

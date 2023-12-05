@@ -26,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 	workloadnfconfig "workload.nephio.org/ran_deployment/api/v1alpha1"
 )
 
@@ -159,7 +160,7 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 					HostIPC:                       false,
 					HostNetwork:                   false,
 					ServiceAccountName:            "oai-gnb-du-sa",
-					TerminationGracePeriodSeconds: int64Ptr(5),
+					TerminationGracePeriodSeconds: pointer.Int64(5),
 					Volumes: []corev1.Volume{
 
 						corev1.Volume{
@@ -222,7 +223,7 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 							},
 							Name: "gnbdu",
 							SecurityContext: &corev1.SecurityContext{
-								Privileged: boolPtr(true),
+								Privileged: pointer.Bool(true),
 							},
 							StdinOnce: false,
 						},
