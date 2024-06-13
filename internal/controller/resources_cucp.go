@@ -226,8 +226,8 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 									Value: "yes",
 								},
 							},
-							// Image: paramsOAI.Spec.Image,
-							Image: "arorasagar/testing-images:oai-gnb-telnet",
+							Image: paramsOAI.Spec.Image,
+							// Image: "arorasagar/testing-images:oai-gnb-telnet",
 							Ports: []corev1.ContainerPort{
 
 								corev1.ContainerPort{

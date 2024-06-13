@@ -177,15 +177,6 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 
 						corev1.Container{
 							Env: []corev1.EnvVar{
-
-								// corev1.EnvVar{
-								// 	Name:  "TZ",
-								// 	Value: "Europe/Paris",
-								// },
-								// corev1.EnvVar{
-								// 	Name:  "RFSIMULATOR",
-								// 	Value: "server",
-								// },
 								corev1.EnvVar{
 									Name: "USE_ADDITIONAL_OPTIONS",
 									Value: "--sa --rfsim --log_config.global_log_options level,nocolor,time" +
@@ -193,17 +184,13 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 										// " --MACRLCs.[0].remote_n_address 192.168.72.2" +
 										" --telnetsrv --telnetsrv.shrmod o1 --telnetsrv.listenaddr 192.168.74.2",
 								},
-								// corev1.EnvVar{
-								// 	Name:  "USE_VOLUMED_CONF",
-								// 	Value: "yes",
-								// },
-								// corev1.EnvVar{
-								// 	Name:  "ASAN_OPTIONS",
-								// 	Value: "detect_leaks=0",
-								// },
+								corev1.EnvVar{
+									Name:  "ASAN_OPTIONS",
+									Value: "detect_leaks=0",
+								},
 							},
-							// Image: paramsOAI.Spec.Image,
-							Image: "arorasagar/testing-images:oai-gnb-telnet",
+							Image: paramsOAI.Spec.Image,
+							// Image: "arorasagar/testing-images:oai-gnb-telnet",
 							// Image:   "nginx:latest",
 							// Command: []string{"tail", "-f", "dev/null"},
 							Ports: []corev1.ContainerPort{

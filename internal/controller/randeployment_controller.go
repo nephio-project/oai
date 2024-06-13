@@ -238,7 +238,7 @@ func (r *RANDeploymentReconciler) GetConfigs(ctx context.Context, ranDeployment 
 func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	logger := log.FromContext(ctx).WithValues("RANDeployment", req.NamespacedName)
-	logger.Info("Local :: Du-Config-Done Reconcile for RANDeployment")
+	logger.Info("Overridden Values Done:: Reconcile for RANDeployment")
 	instance := &workloadv1alpha1.NFDeployment{}
 	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {

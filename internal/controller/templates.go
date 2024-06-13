@@ -653,21 +653,6 @@ type configurationTemplateValuesForDu struct {
 
 func renderConfigurationTemplateForCuCp(values configurationTemplateValuesForCuCp) (string, error) {
 	var buffer bytes.Buffer
-	// Overriding Values for Cucp for O1-Telenet
-	values.TAC = 1
-	values.PLMN_MCC = "001"
-	values.PLMN_MNC = "01"
-	values.PLMN_MNC_LENGTH = "2"
-	values.NSSAI_SST = 1
-	values.NSSAI_SD = "ffffff"
-	values.CELL_ID = "12345678L"
-	values.PHY_CELL_ID = 0
-	values.DL_FREQ_BAND = 78
-	values.DL_SCS = 1
-	values.DL_CARRIER_BW = 51
-	values.UL_FREQ_BAND = 78
-	values.UL_SCS = 1
-	values.UL_CARRIER_BW = 51
 
 	if err := configurationTemplateForCuCpO1Telnet.Execute(&buffer, values); err == nil {
 		return buffer.String(), nil
@@ -678,13 +663,6 @@ func renderConfigurationTemplateForCuCp(values configurationTemplateValuesForCuC
 
 func renderConfigurationTemplateForCuUp(values configurationTemplateValuesForCuUp) (string, error) {
 	var buffer bytes.Buffer
-	// Overriding Values for Cuup for O1-Telenet
-	values.TAC = 1
-	values.PLMN_MCC = "001"
-	values.PLMN_MNC = "01"
-	values.PLMN_MNC_LENGTH = "2"
-	values.NSSAI_SST = 1
-	values.NSSAI_SD = "ffffff"
 
 	if err := configurationTemplateForCuUpO1Telnet.Execute(&buffer, values); err == nil {
 		return buffer.String(), nil
@@ -695,22 +673,6 @@ func renderConfigurationTemplateForCuUp(values configurationTemplateValuesForCuU
 
 func renderConfigurationTemplateForDu(values configurationTemplateValuesForDu) (string, error) {
 	var buffer bytes.Buffer
-	// Overriding Values for Du for O1-Telenet
-	values.TAC = 1
-	values.PLMN_MCC = "001"
-	values.PLMN_MNC = "01"
-	values.PLMN_MNC_LENGTH = "2"
-	values.NSSAI_SST = 1
-	values.NSSAI_SD = "ffffff"
-	values.CELL_ID = "12345678L"
-	values.PHY_CELL_ID = 0
-	values.DL_FREQ_BAND = 78
-	values.DL_SCS = 1
-	values.DL_CARRIER_BW = 51
-	values.UL_FREQ_BAND = 78
-	values.UL_SCS = 1
-	values.UL_CARRIER_BW = 51
-
 	if err := configurationTemplateForDuO1Telnet.Execute(&buffer, values); err == nil {
 		return buffer.String(), nil
 	} else {
