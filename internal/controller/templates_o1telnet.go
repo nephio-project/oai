@@ -16,12 +16,7 @@ limitations under the License.
 
 package controller
 
-import (
-	"bytes"
-	"text/template"
-)
-
-const configurationTemplateSourceForCuCp = `
+const configurationTemplateSourceForCuCpO1Telnet = `
 Active_gNBs = ( "oai-cu-cp");
 # Asn1_verbosity, choice in: none, info, annoying
 Asn1_verbosity = "none";
@@ -32,7 +27,8 @@ gNBs =
 (
  {
     ////////// Identification parameters:
-    gNB_CU_ID = 0xe00;
+    // gNB_CU_ID = 0xe00;
+    gNB_ID = 0xe00;
 
 #     cell_type =  "CELL_MACRO_GNB";
 
@@ -46,9 +42,8 @@ gNBs =
                    snssaiList = ({ sst = {{ .NSSAI_SST }}, sd = 0x{{ .NSSAI_SD }} })
                 });
 
-
     nr_cellid = {{ .CELL_ID }};
-    force_256qam_off = 1;
+    // force_256qam_off = 1;
 
     tr_s_preference = "f1";
 
@@ -60,136 +55,6 @@ gNBs =
     remote_s_portc  = 500;
     remote_s_portd  = 2152;
 
-    ssb_SubcarrierOffset                                      = 0;
-    min_rxtxtime                                              = 6;
-
-    servingCellConfigCommon = (
-    {
- #spCellConfigCommon
-
-      physCellId                                                    = {{ .PHY_CELL_ID }};
-
-#  downlinkConfigCommon
-    #frequencyInfoDL
-      # this is 3600 MHz + 43 PRBs@30kHz SCS (same as initial BWP)
-      absoluteFrequencySSB                                             = 641280;
-      dl_frequencyBand                                                 = {{ .DL_FREQ_BAND }};
-      # this is 3600 MHz
-      dl_absoluteFrequencyPointA                                       = 640008;
-      #scs-SpecificCarrierList
-        dl_offstToCarrier                                              = 0;
-# subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-        dl_subcarrierSpacing                                           = {{ .DL_SCS }};
-        dl_carrierBandwidth                                            = {{ .DL_CARRIER_BW }};
-     #initialDownlinkBWP
-      #genericParameters
-        # this is RBstart=27,L=48 (275*(L-1))+RBstart
-        initialDLBWPlocationAndBandwidth                               = 28875; # 6366 12925 12956 28875 12952
-# subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-        initialDLBWPsubcarrierSpacing                                   = 1;
-      #pdcch-ConfigCommon
-        initialDLBWPcontrolResourceSetZero                              = 11;
-        initialDLBWPsearchSpaceZero                                     = 0;
-
-  #uplinkConfigCommon
-     #frequencyInfoUL
-      ul_frequencyBand                                              = {{ .UL_FREQ_BAND }};
-      #scs-SpecificCarrierList
-      ul_offstToCarrier                                             = 0;
-# subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-      ul_subcarrierSpacing                                          = {{ .UL_SCS }};
-      ul_carrierBandwidth                                           = {{ .UL_CARRIER_BW }};
-      pMax                                                          = 20;
-     #initialUplinkBWP
-      #genericParameters
-        initialULBWPlocationAndBandwidth                            = 28875;
-# subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-        initialULBWPsubcarrierSpacing                               = 1;
-      #rach-ConfigCommon
-        #rach-ConfigGeneric
-          prach_ConfigurationIndex                                  = 98;
-#prach_msg1_FDM
-#0 = one, 1=two, 2=four, 3=eight
-          prach_msg1_FDM                                            = 0;
-          prach_msg1_FrequencyStart                                 = 0;
-          zeroCorrelationZoneConfig                                 = 13;
-          preambleReceivedTargetPower                               = -96;
-#preamblTransMax (0...10) = (3,4,5,6,7,8,10,20,50,100,200)
-          preambleTransMax                                          = 6;
-#powerRampingStep
-# 0=dB0,1=dB2,2=dB4,3=dB6
-        powerRampingStep                                            = 1;
-#ra_ReponseWindow
-#1,2,4,8,10,20,40,80
-        ra_ResponseWindow                                           = 4;
-#ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR
-#1=oneeighth,2=onefourth,3=half,4=one,5=two,6=four,7=eight,8=sixteen
-        ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR                = 4;
-#oneHalf (0..15) 4,8,12,16,...60,64
-        ssb_perRACH_OccasionAndCB_PreamblesPerSSB                   = 14;
-#ra_ContentionResolutionTimer
-#(0..7) 8,16,24,32,40,48,56,64
-        ra_ContentionResolutionTimer                                = 7;
-        rsrp_ThresholdSSB                                           = 19;
-#prach-RootSequenceIndex_PR
-#1 = 839, 2 = 139
-        prach_RootSequenceIndex_PR                                  = 2;
-        prach_RootSequenceIndex                                     = 1;
-        # SCS for msg1, can only be 15 for 30 kHz < 6 GHz, takes precendence over the one derived from prach-ConfigIndex
-        #
-        msg1_SubcarrierSpacing                                      = 1,
-# restrictedSetConfig
-# 0=unrestricted, 1=restricted type A, 2=restricted type B
-        restrictedSetConfig                                         = 0,
-
-        msg3_DeltaPreamble                                          = 1;
-        p0_NominalWithGrant                                         =-90;
-
-# pucch-ConfigCommon setup :
-# pucchGroupHopping
-# 0 = neither, 1= group hopping, 2=sequence hopping
-        pucchGroupHopping                                           = 0;
-        hoppingId                                                   = 40;
-        p0_nominal                                                  = -90;
-# ssb_PositionsInBurs_BitmapPR
-# 1=short, 2=medium, 3=long
-      ssb_PositionsInBurst_PR                                       = 2;
-      ssb_PositionsInBurst_Bitmap                                   = 1;
-
-# ssb_periodicityServingCell
-# 0 = ms5, 1=ms10, 2=ms20, 3=ms40, 4=ms80, 5=ms160, 6=spare2, 7=spare1
-      ssb_periodicityServingCell                                    = 2;
-
-# dmrs_TypeA_position
-# 0 = pos2, 1 = pos3
-      dmrs_TypeA_Position                                           = 0;
-
-# subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-      subcarrierSpacing                                             = 1;
-
-
-  #tdd-UL-DL-ConfigurationCommon
-# subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-      referenceSubcarrierSpacing                                    = 1;
-      # pattern1
-      # dl_UL_TransmissionPeriodicity
-      # 0=ms0p5, 1=ms0p625, 2=ms1, 3=ms1p25, 4=ms2, 5=ms2p5, 6=ms5, 7=ms10
-      dl_UL_TransmissionPeriodicity                                 = 6;
-      nrofDownlinkSlots                                             = 7;
-      nrofDownlinkSymbols                                           = 6;
-      nrofUplinkSlots                                               = 2;
-      nrofUplinkSymbols                                             = 4;
-
-      ssPBCH_BlockPower                                             = -25;
-  }
-
-  );
     # ------- SCTP definitions
     SCTP :
     {
@@ -197,7 +62,6 @@ gNBs =
         SCTP_INSTREAMS  = 2;
         SCTP_OUTSTREAMS = 2;
     };
-
 
     ////////// AMF parameters:
     amf_ip_address      = ( { ipv4       = {{ .AMF_IP }};
@@ -256,7 +120,8 @@ security = {
     };
 
 `
-const configurationTemplateSourceForCuUp = `
+
+const configurationTemplateSourceForCuUpO1Telnet = `
 Active_gNBs = ( "oai-cu-up");
 # Asn1_verbosity, choice in: none, info, annoying
 Asn1_verbosity = "none";
@@ -265,7 +130,8 @@ gNBs =
 (
  {
     ////////// Identification parameters:
-    gNB_CU_ID = 0xe00;
+    gNB_ID = 0xe00;
+    gNB_CU_UP_ID = 0xe00;
 
 #     cell_type =  "CELL_MACRO_GNB";
 
@@ -273,10 +139,10 @@ gNBs =
 
     // Tracking area code, 0x0000 and 0xfffe are reserved values
     tracking_area_code  =  {{ .TAC }};
-    plmn_list = ({ mcc = {{ .PLMN_MCC }}; 
-                   mnc = {{ .PLMN_MNC }}; 
-                   mnc_length ={{ .PLMN_MNC_LENGTH }}; 
-                   snssaiList = ({ sst = {{ .NSSAI_SST }}, sd = 0x{{ .NSSAI_SD }} }) 
+    plmn_list = ({ mcc = {{ .PLMN_MCC }};
+                   mnc = {{ .PLMN_MNC }};
+                   mnc_length ={{ .PLMN_MNC_LENGTH }};
+                   snssaiList = ({ sst = {{ .NSSAI_SST }}, sd = 0x{{ .NSSAI_SD }} })
                 });
 
     tr_s_preference = "f1";
@@ -333,6 +199,8 @@ security = {
   drb_ciphering = "yes";
   drb_integrity = "no";
 };
+
+
      log_config :
      {
        global_log_level                      ="info";
@@ -346,8 +214,9 @@ security = {
        ngap_log_level                         ="debug";
     };
 `
-const configurationTemplateSourceForDu = `
-Active_gNBs = ( "oai-du-rfsim");
+
+const configurationTemplateSourceForDuO1Telnet = `
+Active_gNBs = ( "du-rfsim");
 # Asn1_verbosity, choice in: none, info, annoying
 Asn1_verbosity = "none";
 
@@ -356,10 +225,11 @@ gNBs =
  {
     ////////// Identification parameters:
     gNB_ID = 0xe00;
+    gNB_DU_ID = 0xe00;
 
 #     cell_type =  "CELL_MACRO_GNB";
 
-    gNB_name  =  "oai-du-rfsim";
+    gNB_name  =  "du-rfsim";
 
     // Tracking area code, 0x0000 and 0xfffe are reserved values
     tracking_area_code  =  {{ .TAC }};
@@ -371,7 +241,7 @@ gNBs =
     ////////// Physical parameters:
 
     min_rxtxtime                                              = 6;
-    force_256qam_off = 1;
+    // force_256qam_off = 1;
 
     servingCellConfigCommon = (
     {
@@ -381,11 +251,11 @@ gNBs =
 
 #  downlinkConfigCommon
     #frequencyInfoDL
-      # this is 3600 MHz + 43 PRBs@30kHz SCS (same as initial BWP)
-      absoluteFrequencySSB                                          = 641280;
+      # this is 3410.4 MHz => 301 REs from PointA 25 PRBs + 1 RE
+      absoluteFrequencySSB                                          = 630048;
       dl_frequencyBand                                                 = {{ .DL_FREQ_BAND }};
-      # this is 3600 MHz
-      dl_absoluteFrequencyPointA                                       = 640008;
+      # this is 3410.4 - (51*12*30e-3/2) = 3401.22 MHz
+      dl_absoluteFrequencyPointA                                       = 629436;
       #scs-SpecificCarrierList
         dl_offstToCarrier                                              = 0;
 # subcarrierSpacing
@@ -394,13 +264,13 @@ gNBs =
         dl_carrierBandwidth                                            = {{ .DL_CARRIER_BW }};
      #initialDownlinkBWP
       #genericParameters
-        # this is RBstart=27,L=48 (275*(L-1))+RBstart
-        initialDLBWPlocationAndBandwidth                               = 28875; # 6366 12925 12956 28875 12952
+        # this is RBstart=0,L=50 (275*(L-1))+RBstart
+        initialDLBWPlocationAndBandwidth                               = 13750;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
         initialDLBWPsubcarrierSpacing                                           = 1;
       #pdcch-ConfigCommon
-        initialDLBWPcontrolResourceSetZero                              = 12;
+        initialDLBWPcontrolResourceSetZero                              = 11; # this means shift of 14, so Coreset is in PRBs 1..48, SSB starts at PRB 15
         initialDLBWPsearchSpaceZero                                             = 0;
 
   #uplinkConfigCommon 
@@ -415,19 +285,19 @@ gNBs =
       pMax                                                          = 20;
      #initialUplinkBWP
       #genericParameters
-        initialULBWPlocationAndBandwidth                            = 28875;
+        initialULBWPlocationAndBandwidth                            = 13750;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
         initialULBWPsubcarrierSpacing                                           = 1;
       #rach-ConfigCommon
         #rach-ConfigGeneric
-          prach_ConfigurationIndex                                  = 98;
+          prach_ConfigurationIndex                                  = 100;
 #prach_msg1_FDM
 #0 = one, 1=two, 2=four, 3=eight
           prach_msg1_FDM                                            = 0;
           prach_msg1_FrequencyStart                                 = 0;
-          zeroCorrelationZoneConfig                                 = 13;
-          preambleReceivedTargetPower                               = -96;
+          zeroCorrelationZoneConfig                                 = 15;
+          preambleReceivedTargetPower                               = -104;
 #preamblTransMax (0...10) = (3,4,5,6,7,8,10,20,50,100,200)
           preambleTransMax                                          = 6;
 #powerRampingStep
@@ -438,9 +308,9 @@ gNBs =
         ra_ResponseWindow                                           = 4;
 #ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR
 #1=oneeighth,2=onefourth,3=half,4=one,5=two,6=four,7=eight,8=sixteen
-        ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR                = 4;
+        ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR                = 3;
 #oneHalf (0..15) 4,8,12,16,...60,64
-        ssb_perRACH_OccasionAndCB_PreamblesPerSSB                   = 14;
+        ssb_perRACH_OccasionAndCB_PreamblesPerSSB                   = 15;
 #ra_ContentionResolutionTimer
 #(0..7) 8,16,24,32,40,48,56,64
         ra_ContentionResolutionTimer                                = 7;
@@ -457,14 +327,14 @@ gNBs =
         restrictedSetConfig                                         = 0,
 
         msg3_DeltaPreamble                                          = 1;
-        p0_NominalWithGrant                                         =-90;
+        p0_NominalWithGrant                                         =-96;
 
 # pucch-ConfigCommon setup :
 # pucchGroupHopping
 # 0 = neither, 1= group hopping, 2=sequence hopping
         pucchGroupHopping                                           = 0;
         hoppingId                                                   = 40;
-        p0_nominal                                                  = -90;
+        p0_nominal                                                  = -96;
 # ssb_PositionsInBurs_BitmapPR
 # 1=short, 2=medium, 3=long
       ssb_PositionsInBurst_PR                                       = 2;
@@ -490,8 +360,8 @@ gNBs =
       # pattern1 
       # dl_UL_TransmissionPeriodicity
       # 0=ms0p5, 1=ms0p625, 2=ms1, 3=ms1p25, 4=ms2, 5=ms2p5, 6=ms5, 7=ms10
-      dl_UL_TransmissionPeriodicity                                 = 6;
-      nrofDownlinkSlots                                             = 7;
+      dl_UL_TransmissionPeriodicity                                 = 5;
+      nrofDownlinkSlots                                             = 2;
       nrofDownlinkSymbols                                           = 6;
       nrofUplinkSlots                                               = 2;
       nrofUplinkSymbols                                             = 4;
@@ -586,134 +456,3 @@ serveraddr = "server";
        ngap_log_level                         ="debug";
     };
 `
-
-var (
-	configurationTemplateForCuCp = template.Must(template.New("RanCuCpConfiguration").Parse(configurationTemplateSourceForCuCp))
-	configurationTemplateForCuUp = template.Must(template.New("RanCuUpConfiguration").Parse(configurationTemplateSourceForCuUp))
-	configurationTemplateForDu   = template.Must(template.New("RanDuConfiguration").Parse(configurationTemplateSourceForDu))
-
-	// O1-Telnet
-	configurationTemplateForCuCpO1Telnet = template.Must(template.New("RanCuCpConfigurationO1").Parse(configurationTemplateSourceForCuCpO1Telnet))
-	configurationTemplateForCuUpO1Telnet = template.Must(template.New("RanCuUpConfigurationO1").Parse(configurationTemplateSourceForCuUpO1Telnet))
-	configurationTemplateForDuO1Telnet   = template.Must(template.New("RanDuConfigurationO1").Parse(configurationTemplateSourceForDuO1Telnet))
-)
-
-type configurationTemplateValuesForCuCp struct {
-	E1_IP           string
-	F1C_IP          string
-	N2_IP           string
-	AMF_IP          string
-	TAC             uint32
-	CELL_ID         string
-	PHY_CELL_ID     uint32
-	PLMN_MCC        string
-	PLMN_MNC        string
-	PLMN_MNC_LENGTH string
-	NSSAI_SST       int
-	NSSAI_SD        string
-	DL_FREQ_BAND    uint32
-	DL_SCS          uint16
-	DL_CARRIER_BW   uint32
-	UL_FREQ_BAND    uint32
-	UL_SCS          uint16
-	UL_CARRIER_BW   uint32
-}
-
-type configurationTemplateValuesForCuUp struct {
-	E1_IP           string
-	F1U_IP          string
-	N3_IP           string
-	CUCP_E1         string
-	TAC             uint32
-	PLMN_MCC        string
-	PLMN_MNC        string
-	PLMN_MNC_LENGTH string
-	NSSAI_SST       int
-	NSSAI_SD        string
-}
-
-type configurationTemplateValuesForDu struct {
-	F1C_DU_IP       string
-	F1C_CU_IP       string
-	TAC             uint32
-	CELL_ID         string
-	PHY_CELL_ID     uint32
-	PLMN_MCC        string
-	PLMN_MNC        string
-	PLMN_MNC_LENGTH string
-	NSSAI_SST       int
-	NSSAI_SD        string
-	DL_FREQ_BAND    uint32
-	DL_SCS          uint16
-	DL_CARRIER_BW   uint32
-	UL_FREQ_BAND    uint32
-	UL_SCS          uint16
-	UL_CARRIER_BW   uint32
-}
-
-func renderConfigurationTemplateForCuCp(values configurationTemplateValuesForCuCp) (string, error) {
-	var buffer bytes.Buffer
-	// Overriding Values for Cucp for O1-Telenet
-	values.TAC = 1
-	values.PLMN_MCC = "001"
-	values.PLMN_MNC = "01"
-	values.PLMN_MNC_LENGTH = "2"
-	values.NSSAI_SST = 1
-	values.NSSAI_SD = "ffffff"
-	values.CELL_ID = "12345678L"
-	values.PHY_CELL_ID = 0
-	values.DL_FREQ_BAND = 78
-	values.DL_SCS = 1
-	values.DL_CARRIER_BW = 51
-	values.UL_FREQ_BAND = 78
-	values.UL_SCS = 1
-	values.UL_CARRIER_BW = 51
-
-	if err := configurationTemplateForCuCpO1Telnet.Execute(&buffer, values); err == nil {
-		return buffer.String(), nil
-	} else {
-		return "", err
-	}
-}
-
-func renderConfigurationTemplateForCuUp(values configurationTemplateValuesForCuUp) (string, error) {
-	var buffer bytes.Buffer
-	// Overriding Values for Cuup for O1-Telenet
-	values.TAC = 1
-	values.PLMN_MCC = "001"
-	values.PLMN_MNC = "01"
-	values.PLMN_MNC_LENGTH = "2"
-	values.NSSAI_SST = 1
-	values.NSSAI_SD = "ffffff"
-
-	if err := configurationTemplateForCuUpO1Telnet.Execute(&buffer, values); err == nil {
-		return buffer.String(), nil
-	} else {
-		return "", err
-	}
-}
-
-func renderConfigurationTemplateForDu(values configurationTemplateValuesForDu) (string, error) {
-	var buffer bytes.Buffer
-	// Overriding Values for Du for O1-Telenet
-	values.TAC = 1
-	values.PLMN_MCC = "001"
-	values.PLMN_MNC = "01"
-	values.PLMN_MNC_LENGTH = "2"
-	values.NSSAI_SST = 1
-	values.NSSAI_SD = "ffffff"
-	values.CELL_ID = "12345678L"
-	values.PHY_CELL_ID = 0
-	values.DL_FREQ_BAND = 78
-	values.DL_SCS = 1
-	values.DL_CARRIER_BW = 51
-	values.UL_FREQ_BAND = 78
-	values.UL_SCS = 1
-	values.UL_CARRIER_BW = 51
-
-	if err := configurationTemplateForDuO1Telnet.Execute(&buffer, values); err == nil {
-		return buffer.String(), nil
-	} else {
-		return "", err
-	}
-}

@@ -123,7 +123,7 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 
 	configMap1 := &corev1.ConfigMap{
 		Data: map[string]string{
-			"mounted.conf": configuration,
+			"gnb.conf": configuration,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "oai-gnb-cu-cp-configmap",
@@ -205,8 +205,8 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 								corev1.VolumeMount{
 									Name:      "configuration",
 									ReadOnly:  false,
-									SubPath:   "mounted.conf",
-									MountPath: "/opt/oai-gnb/etc/mounted.conf",
+									SubPath:   "gnb.conf",
+									MountPath: "/opt/oai-gnb/etc/gnb.conf",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -218,13 +218,16 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 								corev1.EnvVar{
 									Name:  "USE_ADDITIONAL_OPTIONS",
 									Value: "--sa --log_config.global_log_options level,nocolor,time",
+									// " --gNBs.[0].E1_INTERFACE.[0].ipv4_cucp 192.168.77.2" +
+									// " --gNBs.[0].local_s_address 192.168.72.2",
 								},
 								corev1.EnvVar{
 									Name:  "USE_VOLUMED_CONF",
 									Value: "yes",
 								},
 							},
-							Image: paramsOAI.Spec.Image,
+							// Image: paramsOAI.Spec.Image,
+							Image: "arorasagar/testing-images:oai-gnb-telnet",
 							Ports: []corev1.ContainerPort{
 
 								corev1.ContainerPort{
