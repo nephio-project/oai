@@ -275,6 +275,19 @@ func (r *RANDeploymentReconciler) checkAction(ctx context.Context, namespacedNam
 	}
 
 	logger.Info("Recieved Action Request of Type : " + actionType + "\t And Target : " + target.Name)
+	if actionType == "bw-reconfigure" {
+
+		o1Obj := O1TelnetClient{
+			url:  "oai-gnb-du-o1-telnet." + target.Namespace + ".svc.cluster.local",
+			port: "9090",
+			conn: nil,
+		}
+		err := ReconfigureBandWidth(&o1Obj, target.Value)
+		if err != nil {
+			logger.Info("Error in Reconfiguring BW :: " + err.Error())
+		}
+		logger.Info("Bandwidth Reconfigured Successfully")
+	}
 
 	return nil
 }
