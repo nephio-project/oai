@@ -305,5 +305,35 @@ func (resource DuResources) GetService() []*corev1.Service {
 		},
 	}
 
-	return []*corev1.Service{service1}
+	// O1-Telent Service
+	service2 := &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				"app.kubernetes.io/name": "oai-gnb-du-o1-telnet",
+			},
+			Name: "oai-gnb-du-o1-telnet",
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"app.kubernetes.io/name": "oai-gnb-du",
+			},
+			Type:      corev1.ServiceType("ClusterIP"),
+			ClusterIP: "None",
+			Ports: []corev1.ServicePort{
+				corev1.ServicePort{
+					Port:     9090,
+					Protocol: corev1.Protocol("TCP"),
+					TargetPort: intstr.IntOrString{
+						IntVal: 9090,
+					},
+				},
+			},
+		},
+	}
+
+	return []*corev1.Service{service1, service2}
 }
