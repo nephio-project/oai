@@ -31,7 +31,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	actorConfigv1 "actor/api/v1"
 
 	configref "github.com/nephio-project/api/references/v1alpha1"
 	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
@@ -222,6 +225,60 @@ func (r *RANDeploymentReconciler) GetConfigs(ctx context.Context, ranDeployment 
 	return configInfo, nil
 }
 
+func (r *RANDeploymentReconciler) OwnNfConfig(ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment) error {
+	namespacedName := types.NamespacedName{Namespace: ranDeployment.Namespace, Name: ranDeployment.Name}
+	logger := log.FromContext(ctx).WithValues("RANDeployment", namespacedName)
+
+	configsList := ranDeployment.Spec.ParametersRefs
+	for _, configItem := range configsList {
+		// Only check for NF-Config
+		if configItem.APIVersion == "workload.nephio.org/v1alpha1" {
+			configInstance := &workloadv1alpha1.NFConfig{}
+			if err := r.Get(ctx, types.NamespacedName{Name: *configItem.Name, Namespace: ranDeployment.Namespace}, configInstance); err != nil {
+				logger.Error(err, "Config for Self get error")
+				return err
+			}
+			logger.Info("Config for Self:", "configInstance.Name", configInstance.Name)
+			// Own the kind: NfConfig
+			if err := controllerutil.SetControllerReference(ranDeployment, configInstance, r.Scheme); err != nil {
+				return err
+			}
+			if err := r.Update(ctx, configInstance); err != nil {
+				logger.Error(err, "Unable to update NfConfig with OwnerReference | ")
+				return err
+			}
+
+			break
+		}
+	}
+
+	return nil
+}
+
+func (r *RANDeploymentReconciler) checkAction(ctx context.Context, namespacedName types.NamespacedName) error {
+	logger := log.FromContext(ctx).WithValues("RANDeployment", namespacedName)
+	logger.Info("Checking ActionConfig for || " + namespacedName.String())
+	// Step-1: If namespacedName refers to a ActionConfig Cr
+	actorConfigInstance := &actorConfigv1.ActorConfig{}
+	err := r.Get(ctx, namespacedName, actorConfigInstance)
+	if err != nil {
+		return err
+	}
+	logger.Info("Confirmed ActionConfig for " + namespacedName.String())
+
+	// Step-2: Once Confirmed the namespacedName refers to a ActionConfig Cr, Check if Action is required
+	actionType := actorConfigInstance.Spec.Action
+	target := actorConfigInstance.Spec.Target
+
+	if actionType == "" {
+		return nil
+	}
+
+	logger.Info("Recieved Action Request of Type : " + actionType + "\t And Target : " + target.Name)
+
+	return nil
+}
+
 //+kubebuilder:rbac:groups=workload.nephio.org,resources=randeployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=workload.nephio.org,resources=randeployments/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=workload.nephio.org,resources=randeployments/finalizers,verbs=update
@@ -236,14 +293,19 @@ func (r *RANDeploymentReconciler) GetConfigs(ctx context.Context, ranDeployment 
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
 	logger := log.FromContext(ctx).WithValues("RANDeployment", req.NamespacedName)
-	logger.Info("Overridden Values Done:: Reconcile for RANDeployment")
+	// logger.Info("Overridden Values Done:: Reconcile for RANDeployment")
+	fmt.Println("Reconciler for namespacedName :: ", req.NamespacedName, " \n:: ", req.String())
 	instance := &workloadv1alpha1.NFDeployment{}
 	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			logger.Info("RANDeployment resource not found, ignoring because object must be deleted")
+			// Either the resource is deleted or Watch has called the reconcile
+			err = r.checkAction(ctx, req.NamespacedName)
+			if err != nil {
+				logger.Info("RANDeployment resource not found, ignoring because object must be deleted")
+			}
+
 			return ctrl.Result{}, nil
 		}
 		logger.Error(err, "Failed to get RANDeployment")
@@ -284,6 +346,10 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				logger.Info("--- Creation for DU")
 				duResource := DuResources{}
 				r.CreateAll(ctx, instance, duResource, configInfo)
+				// Add a NfConfig Listeners (Own)
+				// if err := r.OwnNfConfig(ctx, instance); err != nil {
+				// 	logger.Error(err, " | While Setting OwnerReference")
+				// }
 				logger.Info("--- DU Created")
 
 			}
@@ -333,5 +399,10 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 func (r *RANDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&workloadv1alpha1.NFDeployment{}).
+		Watches(&actorConfigv1.ActorConfig{}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
 }
+
+// Watches(
+// 	&source.Kind{Type: &actorConfigv1.ActorConfig{}},
+// 	&handler.EnqueueRequestForObject{}).
