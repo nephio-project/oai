@@ -218,8 +218,6 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 								corev1.EnvVar{
 									Name:  "USE_ADDITIONAL_OPTIONS",
 									Value: "--sa --log_config.global_log_options level,nocolor,time",
-									// " --gNBs.[0].E1_INTERFACE.[0].ipv4_cucp 192.168.77.2" +
-									// " --gNBs.[0].local_s_address 192.168.72.2",
 								},
 								corev1.EnvVar{
 									Name:  "USE_VOLUMED_CONF",
@@ -227,7 +225,6 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 								},
 							},
 							Image: paramsOAI.Spec.Image,
-							// Image: "arorasagar/testing-images:oai-gnb-telnet",
 							Ports: []corev1.ContainerPort{
 
 								corev1.ContainerPort{

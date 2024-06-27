@@ -183,10 +183,6 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 									Value: "--sa --rfsim --log_config.global_log_options level,nocolor,time" +
 										" --telnetsrv --telnetsrv.shrmod o1 --telnetsrv.listenaddr 192.168.74.2",
 								},
-								corev1.EnvVar{
-									Name:  "ASAN_OPTIONS",
-									Value: "detect_leaks=0",
-								},
 							},
 							Image: paramsOAI.Spec.Image,
 							Ports: []corev1.ContainerPort{

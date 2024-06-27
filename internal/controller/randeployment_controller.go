@@ -285,10 +285,6 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 				logger.Info("--- Creation for DU")
 				duResource := DuResources{}
 				r.CreateAll(ctx, instance, duResource, configInfo)
-				// Add a NfConfig Listeners (Own)
-				// if err := r.OwnNfConfig(ctx, instance); err != nil {
-				// 	logger.Error(err, " | While Setting OwnerReference")
-				// }
 				logger.Info("--- DU Created")
 
 			}
