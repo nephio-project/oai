@@ -32,8 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	runscheme "sigs.k8s.io/controller-runtime/pkg/scheme"
 
-	actorConfigv1 "actor/api/v1"
-
 	refv1alpha1 "github.com/nephio-project/api/references/v1alpha1"
 	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
 	"workload.nephio.org/ran_deployment/internal/controller"
@@ -107,12 +105,6 @@ func main() {
 	schemeBuilder.Register(&workloadv1alpha1.NFDeployment{}, &workloadv1alpha1.NFDeploymentList{})
 	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
 		setupLog.Error(err, "Not able to register workload/v1alpha1 NFDeployment kind")
-	}
-
-	schemeBuilder = &runscheme.Builder{GroupVersion: actorConfigv1.GroupVersion}
-	schemeBuilder.Register(&actorConfigv1.ActorConfig{}, &actorConfigv1.ActorConfigList{})
-	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
-		setupLog.Error(err, "Not able to register actorConfigv1 ActorConfig kind")
 	}
 
 	if err = (&controller.RANDeploymentReconciler{

@@ -16,8 +16,6 @@ COPY cmd/main.go cmd/main.go
 COPY internal/controller/ internal/controller/
 COPY api api
 
-# A Temporary-WorkAround for controller to know about the actorConfig CRD
-COPY actor/actorConfig/ /usr/local/go/src/actor
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
