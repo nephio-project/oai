@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata: # kpt-merge: oai-ue/oai-nr-ue-sa
+  name: oai-nr-ue-sa
+  namespace: oai-ue
+  annotations:
+    internal.kpt.dev/upstream-identifier: '|ServiceAccount|oai-ue|oai-nr-ue-sa'
