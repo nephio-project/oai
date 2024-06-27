@@ -24,6 +24,7 @@ import (
 	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	resourcev1 "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
@@ -180,8 +181,6 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 								corev1.EnvVar{
 									Name: "USE_ADDITIONAL_OPTIONS",
 									Value: "--sa --rfsim --log_config.global_log_options level,nocolor,time" +
-										// " --MACRLCs.[0].local_n_address 192.168.73.3" +
-										// " --MACRLCs.[0].remote_n_address 192.168.72.2" +
 										" --telnetsrv --telnetsrv.shrmod o1 --telnetsrv.listenaddr 192.168.74.2",
 								},
 								corev1.EnvVar{
@@ -190,9 +189,6 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 								},
 							},
 							Image: paramsOAI.Spec.Image,
-							// Image: "arorasagar/testing-images:oai-gnb-telnet",
-							// Image:   "nginx:latest",
-							// Command: []string{"tail", "-f", "dev/null"},
 							Ports: []corev1.ContainerPort{
 
 								corev1.ContainerPort{
@@ -204,6 +200,16 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 									ContainerPort: 2152,
 									Name:          "f1u",
 									Protocol:      corev1.Protocol("UDP"),
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resourcev1.MustParse("2000m"),
+									corev1.ResourceMemory: resourcev1.MustParse("2Gi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resourcev1.MustParse("2000m"),
+									corev1.ResourceMemory: resourcev1.MustParse("1Gi"),
 								},
 							},
 							Stdin: false,
@@ -313,20 +319,20 @@ func (resource DuResources) GetService() []*corev1.Service {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app.kubernetes.io/name": "oai-gnb-du-o1-telnet",
+				"app.kubernetes.io/name": "oai-gnb-du-o1-telnet-lb",
 			},
-			Name: "oai-gnb-du-o1-telnet",
+			Name: "oai-gnb-du-o1-telnet-lb",
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
 				"app.kubernetes.io/name": "oai-gnb-du",
 			},
-			Type:      corev1.ServiceType("ClusterIP"),
-			ClusterIP: "None",
+			Type: corev1.ServiceType("LoadBalancer"),
 			Ports: []corev1.ServicePort{
 				corev1.ServicePort{
 					Port:     9090,
 					Protocol: corev1.Protocol("TCP"),
+					NodePort: 32500,
 					TargetPort: intstr.IntOrString{
 						IntVal: 9090,
 					},
