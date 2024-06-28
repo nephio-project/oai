@@ -589,8 +589,8 @@ func TestGetConfigMapCuCp(t *testing.T) {
 					NSSAI_SD:        *tc.paramsPlmn.Spec.PLMNInfo[0].NSSAI[0].SD,
 				})
 
-				if !reflect.DeepEqual(got[0].Data["mounted.conf"], defaultWantConfigurations) {
-					t.Errorf("GetConfigMap returned %s Wanted %s", got[0].Data["mounted.conf"], defaultWantConfigurations)
+				if !reflect.DeepEqual(got[0].Data["gnb.conf"], defaultWantConfigurations) {
+					t.Errorf("GetConfigMap returned %s Wanted %s", got[0].Data["gnb.conf"], defaultWantConfigurations)
 				}
 			} else {
 				if got != nil {

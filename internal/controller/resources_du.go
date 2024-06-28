@@ -24,6 +24,7 @@ import (
 	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	resourcev1 "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
@@ -98,7 +99,7 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloa
 
 	configMap1 := &corev1.ConfigMap{
 		Data: map[string]string{
-			"mounted.conf": configuration,
+			"gnb.conf": configuration,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "oai-gnb-du-configmap",
@@ -113,7 +114,6 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloa
 }
 
 func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *workloadv1alpha1.NFDeployment, configInfo *ConfigInfo) []*appsv1.Deployment {
-
 	spec := ranDeployment.Spec
 
 	networkAttachmentDefinitionNetworks, err := resource.createNetworkAttachmentDefinitionNetworks(ranDeployment.Name, &spec)
@@ -178,22 +178,10 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 
 						corev1.Container{
 							Env: []corev1.EnvVar{
-
 								corev1.EnvVar{
-									Name:  "TZ",
-									Value: "Europe/Paris",
-								},
-								corev1.EnvVar{
-									Name:  "RFSIMULATOR",
-									Value: "server",
-								},
-								corev1.EnvVar{
-									Name:  "USE_ADDITIONAL_OPTIONS",
-									Value: "--sa --rfsim --log_config.global_log_options level,nocolor,time",
-								},
-								corev1.EnvVar{
-									Name:  "USE_VOLUMED_CONF",
-									Value: "yes",
+									Name: "USE_ADDITIONAL_OPTIONS",
+									Value: "--sa --rfsim --log_config.global_log_options level,nocolor,time" +
+										" --telnetsrv --telnetsrv.shrmod o1 --telnetsrv.listenaddr 192.168.74.2",
 								},
 							},
 							Image: paramsOAI.Spec.Image,
@@ -210,6 +198,16 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 									Protocol:      corev1.Protocol("UDP"),
 								},
 							},
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resourcev1.MustParse("2000m"),
+									corev1.ResourceMemory: resourcev1.MustParse("2Gi"),
+								},
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resourcev1.MustParse("2000m"),
+									corev1.ResourceMemory: resourcev1.MustParse("1Gi"),
+								},
+							},
 							Stdin: false,
 							TTY:   false,
 							VolumeMounts: []corev1.VolumeMount{
@@ -217,8 +215,8 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 								corev1.VolumeMount{
 									Name:      "configuration",
 									ReadOnly:  false,
-									SubPath:   "mounted.conf",
-									MountPath: "/opt/oai-gnb/etc/mounted.conf",
+									SubPath:   "gnb.conf",
+									MountPath: "/opt/oai-gnb/etc/gnb.conf",
 								},
 							},
 							Name: "gnbdu",
@@ -309,5 +307,35 @@ func (resource DuResources) GetService() []*corev1.Service {
 		},
 	}
 
-	return []*corev1.Service{service1}
+	// O1-Telent Service
+	service2 := &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				"app.kubernetes.io/name": "oai-gnb-du-o1-telnet-lb",
+			},
+			Name: "oai-gnb-du-o1-telnet-lb",
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"app.kubernetes.io/name": "oai-gnb-du",
+			},
+			Type: corev1.ServiceType("LoadBalancer"),
+			Ports: []corev1.ServicePort{
+				corev1.ServicePort{
+					Port:     9090,
+					Protocol: corev1.Protocol("TCP"),
+					NodePort: 32500,
+					TargetPort: intstr.IntOrString{
+						IntVal: 9090,
+					},
+				},
+			},
+		},
+	}
+
+	return []*corev1.Service{service1, service2}
 }

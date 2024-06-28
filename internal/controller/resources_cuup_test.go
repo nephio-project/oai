@@ -510,8 +510,8 @@ func TestGetConfigMapCuUp(t *testing.T) {
 					t.Errorf("GetConfigMap CuUp returned %v  Wanted nil", got)
 				}
 			} else {
-				if got[0].Data["mounted.conf"] != tc.wantedConfiguration {
-					t.Errorf("GetConfigMap CuUp returned %v  Wanted %v", got[0].Data["mounted.conf"], tc.wantedConfiguration)
+				if got[0].Data["gnb.conf"] != tc.wantedConfiguration {
+					t.Errorf("GetConfigMap CuUp returned %v  Wanted %v", got[0].Data["gnb.conf"], tc.wantedConfiguration)
 				}
 			}
 

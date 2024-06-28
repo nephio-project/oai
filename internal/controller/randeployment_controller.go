@@ -236,9 +236,9 @@ func (r *RANDeploymentReconciler) GetConfigs(ctx context.Context, ranDeployment 
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
 	logger := log.FromContext(ctx).WithValues("RANDeployment", req.NamespacedName)
 	logger.Info("Reconcile for RANDeployment")
+
 	instance := &workloadv1alpha1.NFDeployment{}
 	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
@@ -246,6 +246,7 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			logger.Info("RANDeployment resource not found, ignoring because object must be deleted")
 			return ctrl.Result{}, nil
 		}
+
 		logger.Error(err, "Failed to get RANDeployment")
 		return ctrl.Result{}, err
 	}

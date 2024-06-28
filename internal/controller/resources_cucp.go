@@ -123,7 +123,7 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 
 	configMap1 := &corev1.ConfigMap{
 		Data: map[string]string{
-			"mounted.conf": configuration,
+			"gnb.conf": configuration,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "oai-gnb-cu-cp-configmap",
@@ -205,8 +205,8 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 								corev1.VolumeMount{
 									Name:      "configuration",
 									ReadOnly:  false,
-									SubPath:   "mounted.conf",
-									MountPath: "/opt/oai-gnb/etc/mounted.conf",
+									SubPath:   "gnb.conf",
+									MountPath: "/opt/oai-gnb/etc/gnb.conf",
 								},
 							},
 							Env: []corev1.EnvVar{

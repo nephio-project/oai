@@ -97,10 +97,10 @@ func (resource CuUpResources) GetDeployment(log logr.Logger, ranDeployment *work
 							VolumeMounts: []corev1.VolumeMount{
 
 								corev1.VolumeMount{
-									MountPath: "/opt/oai-gnb/etc/mounted.conf",
+									MountPath: "/opt/oai-gnb/etc/gnb.conf",
 									Name:      "configuration",
 									ReadOnly:  false,
-									SubPath:   "mounted.conf",
+									SubPath:   "gnb.conf",
 								},
 							},
 							Env: []corev1.EnvVar{
@@ -111,7 +111,7 @@ func (resource CuUpResources) GetDeployment(log logr.Logger, ranDeployment *work
 								},
 								corev1.EnvVar{
 									Name:  "USE_ADDITIONAL_OPTIONS",
-									Value: "--sa",
+									Value: "--sa --log_config.global_log_options level,nocolor,time",
 								},
 								corev1.EnvVar{
 									Name:  "USE_VOLUMED_CONF",
@@ -259,7 +259,7 @@ func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 			Kind:       "ConfigMap",
 		},
 		Data: map[string]string{
-			"mounted.conf": configuration,
+			"gnb.conf": configuration,
 		},
 	}
 
