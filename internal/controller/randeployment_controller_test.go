@@ -340,6 +340,11 @@ func TestDeleteAll(t *testing.T) {
 }
 
 func TestReconcileErrorScenarios(t *testing.T) {
+	supportedProvider := ""
+	for _, provider := range GetSupportedProviders() {
+		supportedProvider += (provider + ", ")
+	}
+
 	cases := map[string]struct {
 		ranDeployment *workloadv1alpha1.NFDeployment
 		mockReturnErr error
@@ -355,6 +360,18 @@ func TestReconcileErrorScenarios(t *testing.T) {
 		"Ran-deployment Nf Doesn't have a provider field": {
 			ranDeployment: &workloadv1alpha1.NFDeployment{
 				Spec: workloadv1alpha1.NFDeploymentSpec{},
+				Status: workloadv1alpha1.NFDeploymentStatus{
+					// The operator must give this Status-Condition
+					Conditions: []metav1.Condition{
+						{
+							Type:               "invalidProvider",
+							LastTransitionTime: metav1.Time{Time: time.Now()},
+							Status:             metav1.ConditionFalse,
+							Reason:             "invalidProvider",
+							Message:            " Not supported| Supported Providers are " + supportedProvider,
+						},
+					},
+				},
 			},
 			mockReturnErr: nil,
 			expectedError: nil,
@@ -367,6 +384,18 @@ func TestReconcileErrorScenarios(t *testing.T) {
 						{
 							APIVersion: "dummy-apiversion",
 							Name:       pointer.String("ABC"),
+						},
+					},
+				},
+				Status: workloadv1alpha1.NFDeploymentStatus{
+					// The operator must give this Status-Condition
+					Conditions: []metav1.Condition{
+						{
+							Type:               "invalidConfigInfo",
+							LastTransitionTime: metav1.Time{Time: time.Now()},
+							Status:             metav1.ConditionFalse,
+							Reason:             "invalidConfigInfo",
+							Message:            "Failed to get required ConfigInfo | Error: " + "Not supported API version \"dummy-apiversion\"",
 						},
 					},
 				},
@@ -399,6 +428,14 @@ func TestReconcileErrorScenarios(t *testing.T) {
 }
 
 func TestReconcileCreateScenarios(t *testing.T) {
+	mustCondition := metav1.Condition{
+		Type:               "resourceCreation",
+		LastTransitionTime: metav1.Time{Time: time.Now()},
+		Status:             metav1.ConditionTrue,
+		Reason:             "resourceCreation",
+		Message:            "All resources created successfully",
+	}
+
 	cases := map[string]struct {
 		ranDeployment *workloadv1alpha1.NFDeployment
 		expectedError error
@@ -406,18 +443,36 @@ func TestReconcileCreateScenarios(t *testing.T) {
 		"Create DU": {
 			ranDeployment: &workloadv1alpha1.NFDeployment{
 				Spec: workloadv1alpha1.NFDeploymentSpec{Provider: "du.openairinterface.org"},
+				Status: workloadv1alpha1.NFDeploymentStatus{
+					// The operator must give this Status-Condition
+					Conditions: []metav1.Condition{
+						mustCondition,
+					},
+				},
 			},
 			expectedError: nil,
 		},
 		"Create CUCP": {
 			ranDeployment: &workloadv1alpha1.NFDeployment{
 				Spec: workloadv1alpha1.NFDeploymentSpec{Provider: "cucp.openairinterface.org"},
+				Status: workloadv1alpha1.NFDeploymentStatus{
+					// The operator must give this Status-Condition
+					Conditions: []metav1.Condition{
+						mustCondition,
+					},
+				},
 			},
 			expectedError: nil,
 		},
 		"Create CUUP": {
 			ranDeployment: &workloadv1alpha1.NFDeployment{
 				Spec: workloadv1alpha1.NFDeploymentSpec{Provider: "cuup.openairinterface.org"},
+				Status: workloadv1alpha1.NFDeploymentStatus{
+					// The operator must give this Status-Condition
+					Conditions: []metav1.Condition{
+						mustCondition,
+					},
+				},
 			},
 			expectedError: nil,
 		},
@@ -456,6 +511,14 @@ func TestReconcileCreateScenarios(t *testing.T) {
 }
 
 func TestReconcileDeleteScenarios(t *testing.T) {
+	mustCondition := metav1.Condition{
+		Type:               "resourceDeletion",
+		LastTransitionTime: metav1.Time{Time: time.Now()},
+		Status:             metav1.ConditionTrue,
+		Reason:             "resourceDeletion",
+		Message:            "All resources deleted successfully",
+	}
+
 	cases := map[string]struct {
 		ranDeployment *workloadv1alpha1.NFDeployment
 		expectedError error
@@ -466,6 +529,12 @@ func TestReconcileDeleteScenarios(t *testing.T) {
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
 				},
 				Spec: workloadv1alpha1.NFDeploymentSpec{Provider: "du.openairinterface.org"},
+				Status: workloadv1alpha1.NFDeploymentStatus{
+					// The operator must give this Status-Condition
+					Conditions: []metav1.Condition{
+						mustCondition,
+					},
+				},
 			},
 			expectedError: nil,
 		},
@@ -475,6 +544,12 @@ func TestReconcileDeleteScenarios(t *testing.T) {
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
 				},
 				Spec: workloadv1alpha1.NFDeploymentSpec{Provider: "cucp.openairinterface.org"},
+				Status: workloadv1alpha1.NFDeploymentStatus{
+					// The operator must give this Status-Condition
+					Conditions: []metav1.Condition{
+						mustCondition,
+					},
+				},
 			},
 			expectedError: nil,
 		},
@@ -484,6 +559,12 @@ func TestReconcileDeleteScenarios(t *testing.T) {
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
 				},
 				Spec: workloadv1alpha1.NFDeploymentSpec{Provider: "cuup.openairinterface.org"},
+				Status: workloadv1alpha1.NFDeploymentStatus{
+					// The operator must give this Status-Condition
+					Conditions: []metav1.Condition{
+						mustCondition,
+					},
+				},
 			},
 			expectedError: nil,
 		},
