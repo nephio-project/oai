@@ -51,15 +51,6 @@ Follow the steps 3-6 of [Master Excercise](https://docs.nephio.org/docs/guides/u
 ```
 
 ### Step-7: Deploy UE (20 MHz):
-The current ue-image is not able to connect to the du using service (oai-gnb-du.oai-ran-du), Therefore, we provide the du-ip to ue manually as workaround: (Todo: Ideal way to resolve)
-```bash
-DU_POD=$(kubectl get pods -n oai-ran-du --context edge-admin@edge  -l app.kubernetes.io/name=oai-gnb-du  -o jsonpath='{.items[*].metadata.name}')
-DU_IP=$(kubectl get pods $DU_POD -n oai-ran-du --context edge-admin@edge -o jsonpath="{.status.podIP}")
-echo $DU_IP
-```
-Copy the du-ip to the "uedeployment.yaml" under the Additional-Option "--rfsimulator.serveraddr" to both 20Mhz and 40Mhz UE.
-
-#### Deploy the ue
 ```bash
 cd test-infra/oai-ue/
 kubectl apply -f namespace.yaml --context edge-admin@edge
