@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -35,6 +36,7 @@ import (
 
 	configref "github.com/nephio-project/api/references/v1alpha1"
 	workloadv1alpha1 "github.com/nephio-project/api/workload/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func GetSupportedProviders() []string {
@@ -69,18 +71,19 @@ type NfResource interface {
 	GetService() []*corev1.Service
 }
 
-func (r *RANDeploymentReconciler) CreateAll(ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment, nfResource NfResource, configInfo *ConfigInfo) {
+func (r *RANDeploymentReconciler) CreateAll(ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment, nfResource NfResource, configInfo *ConfigInfo) []error {
 	namespacedName := types.NamespacedName{Namespace: ranDeployment.Namespace, Name: ranDeployment.Name}
 	logger := log.FromContext(ctx).WithValues("RANDeployment", namespacedName)
+	outErrorList := []error{}
 	var err error
 	namespaceProvided := ranDeployment.Namespace
-
 	for _, resource := range nfResource.GetServiceAccount() {
 		if resource.ObjectMeta.Namespace == "" {
 			resource.ObjectMeta.Namespace = namespaceProvided
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
+			outErrorList = append(outErrorList, err)
 			logger.Error(err, "Error During Creating resource of GetServiceAccount()")
 		}
 	}
@@ -91,6 +94,7 @@ func (r *RANDeploymentReconciler) CreateAll(ctx context.Context, ranDeployment *
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
+			outErrorList = append(outErrorList, err)
 			logger.Error(err, "Error During Creating resource of GetConfigMap()")
 		}
 	}
@@ -101,6 +105,7 @@ func (r *RANDeploymentReconciler) CreateAll(ctx context.Context, ranDeployment *
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
+			outErrorList = append(outErrorList, err)
 			logger.Error(err, "Error During Creating resource of GetDeployment()")
 		}
 	}
@@ -110,24 +115,27 @@ func (r *RANDeploymentReconciler) CreateAll(ctx context.Context, ranDeployment *
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
+			outErrorList = append(outErrorList, err)
 			logger.Error(err, "Error During Creating resource of GetService()")
 		}
 	}
+	return outErrorList
 
 }
 
-func (r *RANDeploymentReconciler) DeleteAll(ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment, nfResource NfResource, configInfo *ConfigInfo) {
+func (r *RANDeploymentReconciler) DeleteAll(ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment, nfResource NfResource, configInfo *ConfigInfo) []error {
 	namespacedName := types.NamespacedName{Namespace: ranDeployment.Namespace, Name: ranDeployment.Name}
 	logger := log.FromContext(ctx).WithValues("RANDeployment", namespacedName)
+	outErrorList := []error{}
 	var err error
 	namespaceProvided := ranDeployment.Namespace
-
 	for _, resource := range nfResource.GetServiceAccount() {
 		if resource.ObjectMeta.Namespace == "" {
 			resource.ObjectMeta.Namespace = namespaceProvided
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
+			outErrorList = append(outErrorList, err)
 			logger.Error(err, "Error During Deleting resource of GetServiceAccount()")
 		}
 	}
@@ -138,6 +146,7 @@ func (r *RANDeploymentReconciler) DeleteAll(ctx context.Context, ranDeployment *
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
+			outErrorList = append(outErrorList, err)
 			logger.Error(err, "Error During Deleting resource of GetConfigMap()")
 		}
 	}
@@ -148,6 +157,7 @@ func (r *RANDeploymentReconciler) DeleteAll(ctx context.Context, ranDeployment *
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
+			outErrorList = append(outErrorList, err)
 			logger.Error(err, "Error During Deleting resource of GetDeployment()")
 		}
 
@@ -159,10 +169,12 @@ func (r *RANDeploymentReconciler) DeleteAll(ctx context.Context, ranDeployment *
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
+			outErrorList = append(outErrorList, err)
 			logger.Error(err, "Error During Deleting resource of GetService()")
 		}
 
 	}
+	return outErrorList
 
 }
 
@@ -222,6 +234,36 @@ func (r *RANDeploymentReconciler) GetConfigs(ctx context.Context, ranDeployment 
 	return configInfo, nil
 }
 
+/*
+For status:
+Accepted Condition-Type (CamelCased) are:
+ 1. invalidProvider
+ 2. invalidConfigInfo
+ 3. resourceCreation
+ 4. resourceDeletion
+*/
+func (r *RANDeploymentReconciler) updateStatusIfRequired(ctx context.Context, ranDeployment *workloadv1alpha1.NFDeployment, curCondition metav1.Condition) error {
+
+	for index, oldCond := range ranDeployment.Status.Conditions {
+		if oldCond.Type == curCondition.Type {
+			// Check if the condition is different from the previous one
+			if oldCond.Reason == curCondition.Reason && oldCond.Message == curCondition.Message && oldCond.Status == curCondition.Status {
+				// Do Nothing
+				return nil
+			} else {
+				// CurCondition is New
+				ranDeployment.Status.Conditions[index] = curCondition
+				err := r.Status().Update(ctx, ranDeployment)
+				return err
+			}
+		}
+	}
+	// The condition-type is new
+	ranDeployment.Status.Conditions = append(ranDeployment.Status.Conditions, curCondition)
+	err := r.Status().Update(ctx, ranDeployment)
+	return err
+}
+
 //+kubebuilder:rbac:groups=workload.nephio.org,resources=randeployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=workload.nephio.org,resources=randeployments/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=workload.nephio.org,resources=randeployments/finalizers,verbs=update
@@ -253,6 +295,23 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	if !slices.Contains(GetSupportedProviders(), instance.Spec.Provider) {
 		logger.Info("Reconcile called for not supported provider", "Provider", instance.Spec.Provider)
+		// Update it in Status
+		supportedProvider := ""
+		for _, provider := range GetSupportedProviders() {
+			supportedProvider += (provider + ", ")
+		}
+		curCondition := metav1.Condition{
+			Type:               "invalidProvider",
+			LastTransitionTime: metav1.Time{Time: time.Now()},
+			Status:             metav1.ConditionFalse,
+			Reason:             "invalidProvider",
+			Message:            instance.Spec.Provider + " Not supported| Supported Providers are " + supportedProvider,
+		}
+		err = r.updateStatusIfRequired(ctx, instance, curCondition)
+		if err != nil {
+			logger.Error(err, " | Unable to update status with type: invalidProvider")
+		}
+
 		return ctrl.Result{}, nil
 	}
 	logger.Info("RANDeployment", "RANDeployment CR", instance.Spec)
@@ -260,6 +319,18 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	configInfo, err := r.GetConfigs(ctx, instance)
 	if err != nil || configInfo == nil {
 		logger.Error(err, "Failed to get required ConfigInfo")
+		curCondition := metav1.Condition{
+			Type:               "invalidConfigInfo",
+			LastTransitionTime: metav1.Time{Time: time.Now()},
+			Status:             metav1.ConditionFalse,
+			Reason:             "invalidConfigInfo",
+			Message:            "Failed to get required ConfigInfo | Error: " + err.Error(),
+		}
+		statusErr := r.updateStatusIfRequired(ctx, instance, curCondition)
+		if err != nil {
+			logger.Error(statusErr, " | Unable to update status with type: invalidConfigInfo")
+		}
+
 		return ctrl.Result{}, err
 	}
 	// name of our custom finalizer
@@ -269,25 +340,54 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		// Adding a Finaliser also adds the DeletionTimestamp while deleting
 		if !controllerutil.ContainsFinalizer(instance, myFinalizerName) {
 			// Assumed to be called only during CR-Creation
-
+			var errList []error
 			switch resourceType := instance.Spec.Provider; resourceType {
 			case "cucp.openairinterface.org":
 				logger.Info("--- Creation for CUCP")
 				cucpResource := CuCpResources{}
-				r.CreateAll(ctx, instance, cucpResource, configInfo)
+				errList = r.CreateAll(ctx, instance, cucpResource, configInfo)
 				logger.Info("--- CUCP Created")
 			case "cuup.openairinterface.org":
 				logger.Info("--- Creation for CUUP")
 				cuupResource := CuUpResources{}
-				r.CreateAll(ctx, instance, cuupResource, configInfo)
+				errList = r.CreateAll(ctx, instance, cuupResource, configInfo)
 				logger.Info("--- CUUP Created")
 			case "du.openairinterface.org":
 				logger.Info("--- Creation for DU")
 				duResource := DuResources{}
-				r.CreateAll(ctx, instance, duResource, configInfo)
+				errList = r.CreateAll(ctx, instance, duResource, configInfo)
 				logger.Info("--- DU Created")
 
 			}
+			// Update Status:
+			var curCondition metav1.Condition
+			if len(errList) == 0 {
+				curCondition = metav1.Condition{
+					Type:               "resourceCreation",
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Status:             metav1.ConditionTrue,
+					Reason:             "resourceCreation",
+					Message:            "All resources created successfully",
+				}
+			} else {
+				message := ""
+				for _, err := range errList {
+					message += (err.Error() + ", ")
+				}
+				curCondition = metav1.Condition{
+					Type:               "resourceCreation",
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Status:             metav1.ConditionFalse,
+					Reason:             "resourceCreation",
+					Message:            message,
+				}
+
+			}
+			err = r.updateStatusIfRequired(ctx, instance, curCondition)
+			if err != nil {
+				logger.Error(err, " | Unable to update status with type: resourceCreation")
+			}
+
 			controllerutil.AddFinalizer(instance, myFinalizerName)
 			if err := r.Update(ctx, instance); err != nil {
 				return ctrl.Result{}, err
@@ -296,24 +396,53 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	} else {
 		// The object is assumed to be deleted
 		if controllerutil.ContainsFinalizer(instance, myFinalizerName) {
-
+			var errList []error
 			switch resourceType := instance.Spec.Provider; resourceType {
 			case "cucp.openairinterface.org":
 				logger.Info("--- Deletion for CUCP")
 				cucpResource := CuCpResources{}
-				r.DeleteAll(ctx, instance, cucpResource, configInfo)
+				errList = r.DeleteAll(ctx, instance, cucpResource, configInfo)
 				logger.Info("--- CUCP Deleted")
 			case "cuup.openairinterface.org":
 				logger.Info("--- Deletion for CUUP")
 				cuupResource := CuUpResources{}
-				r.DeleteAll(ctx, instance, cuupResource, configInfo)
+				errList = r.DeleteAll(ctx, instance, cuupResource, configInfo)
 				logger.Info("--- CUUP Deleted")
 			case "du.openairinterface.org":
 				logger.Info("--- Deletion for DU")
 				duResource := DuResources{}
-				r.DeleteAll(ctx, instance, duResource, configInfo)
+				errList = r.DeleteAll(ctx, instance, duResource, configInfo)
 				logger.Info("--- DU Deleted")
 
+			}
+
+			// Update Status:
+			var curCondition metav1.Condition
+			if len(errList) == 0 {
+				curCondition = metav1.Condition{
+					Type:               "resourceDeletion",
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Status:             metav1.ConditionTrue,
+					Reason:             "resourceDeletion",
+					Message:            "All resources deleted successfully",
+				}
+			} else {
+				message := ""
+				for _, err := range errList {
+					message += (err.Error() + ", ")
+				}
+				curCondition = metav1.Condition{
+					Type:               "resourceDeletion",
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Status:             metav1.ConditionFalse,
+					Reason:             "resourceDeletion",
+					Message:            message,
+				}
+
+			}
+			err = r.updateStatusIfRequired(ctx, instance, curCondition)
+			if err != nil {
+				logger.Error(err, " | Unable to update status with type: resourceDeletion")
 			}
 
 			// remove our finalizer from the list and update it.
