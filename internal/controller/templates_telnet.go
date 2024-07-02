@@ -16,7 +16,7 @@ limitations under the License.
 
 package controller
 
-const configurationTemplateSourceForCuCpO1Telnet = `
+const configurationTemplateSourceForCuCpTelnet = `
 Active_gNBs = ( "oai-cu-cp");
 # Asn1_verbosity, choice in: none, info, annoying
 Asn1_verbosity = "none";
@@ -121,7 +121,7 @@ security = {
 
 `
 
-const configurationTemplateSourceForCuUpO1Telnet = `
+const configurationTemplateSourceForCuUpTelnet = `
 Active_gNBs = ( "oai-cu-up");
 # Asn1_verbosity, choice in: none, info, annoying
 Asn1_verbosity = "none";
@@ -215,7 +215,7 @@ security = {
     };
 `
 
-const configurationTemplateSourceForDuO1Telnet = `
+const configurationTemplateSourceForDuTelnet = `
 Active_gNBs = ( "du-rfsim");
 # Asn1_verbosity, choice in: none, info, annoying
 Asn1_verbosity = "none";
