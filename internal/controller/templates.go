@@ -22,10 +22,10 @@ import (
 )
 
 var (
-	// O1-Telnet
-	configurationTemplateForCuCpO1Telnet = template.Must(template.New("RanCuCpConfigurationO1").Parse(configurationTemplateSourceForCuCpO1Telnet))
-	configurationTemplateForCuUpO1Telnet = template.Must(template.New("RanCuUpConfigurationO1").Parse(configurationTemplateSourceForCuUpO1Telnet))
-	configurationTemplateForDuO1Telnet   = template.Must(template.New("RanDuConfigurationO1").Parse(configurationTemplateSourceForDuO1Telnet))
+	// Telnet
+	configurationTemplateForCuCpTelnet = template.Must(template.New("RanCuCpConfigurationTelnet").Parse(configurationTemplateSourceForCuCpTelnet))
+	configurationTemplateForCuUpTelnet = template.Must(template.New("RanCuUpConfigurationTelnet").Parse(configurationTemplateSourceForCuUpTelnet))
+	configurationTemplateForDuTelnet   = template.Must(template.New("RanDuConfigurationTelnet").Parse(configurationTemplateSourceForDuTelnet))
 )
 
 type configurationTemplateValuesForCuCp struct {
@@ -84,7 +84,7 @@ type configurationTemplateValuesForDu struct {
 func renderConfigurationTemplateForCuCp(values configurationTemplateValuesForCuCp) (string, error) {
 	var buffer bytes.Buffer
 
-	if err := configurationTemplateForCuCpO1Telnet.Execute(&buffer, values); err == nil {
+	if err := configurationTemplateForCuCpTelnet.Execute(&buffer, values); err == nil {
 		return buffer.String(), nil
 	} else {
 		return "", err
@@ -94,7 +94,7 @@ func renderConfigurationTemplateForCuCp(values configurationTemplateValuesForCuC
 func renderConfigurationTemplateForCuUp(values configurationTemplateValuesForCuUp) (string, error) {
 	var buffer bytes.Buffer
 
-	if err := configurationTemplateForCuUpO1Telnet.Execute(&buffer, values); err == nil {
+	if err := configurationTemplateForCuUpTelnet.Execute(&buffer, values); err == nil {
 		return buffer.String(), nil
 	} else {
 		return "", err
@@ -103,7 +103,7 @@ func renderConfigurationTemplateForCuUp(values configurationTemplateValuesForCuU
 
 func renderConfigurationTemplateForDu(values configurationTemplateValuesForDu) (string, error) {
 	var buffer bytes.Buffer
-	if err := configurationTemplateForDuO1Telnet.Execute(&buffer, values); err == nil {
+	if err := configurationTemplateForDuTelnet.Execute(&buffer, values); err == nil {
 		return buffer.String(), nil
 	} else {
 		return "", err

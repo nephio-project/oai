@@ -307,7 +307,7 @@ func (resource DuResources) GetService() []*corev1.Service {
 		},
 	}
 
-	// O1-Telent Service
+	// Telent Service
 	service2 := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -315,9 +315,9 @@ func (resource DuResources) GetService() []*corev1.Service {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app.kubernetes.io/name": "oai-gnb-du-o1-telnet-lb",
+				"app.kubernetes.io/name": "oai-gnb-du-telnet-lb",
 			},
-			Name: "oai-gnb-du-o1-telnet-lb",
+			Name: "oai-gnb-du-telnet-lb",
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
