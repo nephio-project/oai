@@ -260,7 +260,7 @@ func TestGetServiceAccountCuCp(t *testing.T) {
 	actual := cucpResource.GetServiceAccount()
 	serviceAccount := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "oai-gnb-cu-cp-sa",
+			Name: "oai-cu-cp-sa",
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

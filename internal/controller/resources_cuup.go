@@ -62,16 +62,16 @@ func (resource CuUpResources) GetDeployment(log logr.Logger, ranDeployment *work
 	deployment1 := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app.kubernetes.io/name": "oai-gnb-cu-up",
+				"app.kubernetes.io/name": "oai-cu-up",
 			},
-			Name: "oai-gnb-cu-up",
+			Name: "oai-cu-up",
 		},
 		Spec: appsv1.DeploymentSpec{
 			Paused:   false,
 			Replicas: pointer.Int32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": "oai-gnb-cu-up",
+					"app.kubernetes.io/name": "oai-cu-up",
 				},
 			},
 			Strategy: appsv1.DeploymentStrategy{
@@ -81,8 +81,8 @@ func (resource CuUpResources) GetDeployment(log logr.Logger, ranDeployment *work
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: podAnnotations,
 					Labels: map[string]string{
-						"app":                    "oai-gnb-cu-up",
-						"app.kubernetes.io/name": "oai-gnb-cu-up",
+						"app":                    "oai-cu-up",
+						"app.kubernetes.io/name": "oai-cu-up",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -143,12 +143,12 @@ func (resource CuUpResources) GetDeployment(log logr.Logger, ranDeployment *work
 							StdinOnce: false,
 							TTY:       false,
 							Image:     paramsOAI.Spec.Image,
-							Name:      "gnbcuup",
+							Name:      "cuup",
 						},
 					},
 					DNSPolicy:          corev1.DNSPolicy("ClusterFirst"),
 					SchedulerName:      "default-scheduler",
-					ServiceAccountName: "oai-gnb-cu-up-sa",
+					ServiceAccountName: "oai-cu-up-sa",
 					Volumes: []corev1.Volume{
 
 						corev1.Volume{
@@ -156,7 +156,7 @@ func (resource CuUpResources) GetDeployment(log logr.Logger, ranDeployment *work
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "oai-gnb-cu-up-configmap",
+										Name: "oai-cu-up-configmap",
 									},
 								},
 							},
@@ -178,7 +178,7 @@ func (resource CuUpResources) GetServiceAccount() []*corev1.ServiceAccount {
 
 	serviceAccount1 := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "oai-gnb-cu-up-sa",
+			Name: "oai-cu-up-sa",
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -252,7 +252,7 @@ func (resource CuUpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 
 	configMap1 := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "oai-gnb-cu-up-configmap",
+			Name: "oai-cu-up-configmap",
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

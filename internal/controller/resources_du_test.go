@@ -504,7 +504,7 @@ func TestGetServiceAccountDu(t *testing.T) {
 			want: []*corev1.ServiceAccount{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "oai-gnb-du-sa",
+						Name: "oai-du-sa",
 					},
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
