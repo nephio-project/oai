@@ -18,19 +18,14 @@ package controller
 
 const configurationTemplateSourceForCuCpTelnet = `
 Active_gNBs = ( "oai-cu-cp");
-# Asn1_verbosity, choice in: none, info, annoying
 Asn1_verbosity = "none";
-Num_Threads_PUSCH = 8;
 sa = 1;
 
 gNBs =
 (
  {
     ////////// Identification parameters:
-    // gNB_CU_ID = 0xe00;
     gNB_ID = 0xe00;
-
-#     cell_type =  "CELL_MACRO_GNB";
 
     gNB_name  =  "oai-cu-cp";
 
@@ -43,11 +38,7 @@ gNBs =
                 });
 
     nr_cellid = {{ .CELL_ID }};
-    // force_256qam_off = 1;
-
     tr_s_preference = "f1";
-
-    local_s_if_name = "f1c";
     local_s_address = {{ .F1C_IP }};
     remote_s_address = "0.0.0.0";
     local_s_portc   = 501;
@@ -64,12 +55,7 @@ gNBs =
     };
 
     ////////// AMF parameters:
-    amf_ip_address      = ( { ipv4       = {{ .AMF_IP }};
-                              ipv6       = "0:0:0::0";
-                              active     = "yes";
-                              preference = "ipv4";
-                            }
-                          );
+    amf_ip_address      = ( { ipv4       = {{ .AMF_IP }}; });
 
     E1_INTERFACE =
     (
@@ -84,7 +70,6 @@ gNBs =
 
     NETWORK_INTERFACES :
     {
-        GNB_INTERFACE_NAME_FOR_NG_AMF            = "n2";
         GNB_IPV4_ADDRESS_FOR_NG_AMF              = {{ .N2_IP }};
     };
   }
@@ -133,8 +118,6 @@ gNBs =
     gNB_ID = 0xe00;
     gNB_CU_UP_ID = 0xe00;
 
-#     cell_type =  "CELL_MACRO_GNB";
-
     gNB_name  =  "oai-cu-up";
 
     // Tracking area code, 0x0000 and 0xfffe are reserved values
@@ -147,7 +130,6 @@ gNBs =
 
     tr_s_preference = "f1";
 
-    local_s_if_name = "f1u";
     local_s_address = {{ .F1U_IP }};
     remote_s_address = "0.0.0.0";
     local_s_portc   = 501;
@@ -174,9 +156,7 @@ gNBs =
 
     NETWORK_INTERFACES :
     {
-        GNB_INTERFACE_NAME_FOR_NG_AMF            = "n3";
         GNB_IPV4_ADDRESS_FOR_NG_AMF              = {{ .N3_IP }};
-        GNB_INTERFACE_NAME_FOR_NGU               = "n3";
         GNB_IPV4_ADDRESS_FOR_NGU                 = {{ .N3_IP }};
         GNB_PORT_FOR_S1U                         = 2152; # Spec 2152
     };
@@ -201,25 +181,19 @@ security = {
 };
 
 
-     log_config :
-     {
-       global_log_level                      ="info";
-       hw_log_level                          ="info";
-       phy_log_level                         ="info";
-       mac_log_level                         ="info";
-       rlc_log_level                         ="debug";
-       pdcp_log_level                        ="info";
-       rrc_log_level                         ="info";
-       f1ap_log_level                         ="info";
-       ngap_log_level                         ="debug";
-    };
+log_config :
+{
+global_log_level                      ="info";
+pdcp_log_level                        ="info";
+f1ap_log_level                        ="info";
+ngap_log_level                        ="info";
+};
 `
 
 const configurationTemplateSourceForDuTelnet = `
-Active_gNBs = ( "du-rfsim");
+Active_gNBs = ( "oai-du");
 # Asn1_verbosity, choice in: none, info, annoying
 Asn1_verbosity = "none";
-
 gNBs =
 (
  {
@@ -227,9 +201,7 @@ gNBs =
     gNB_ID = 0xe00;
     gNB_DU_ID = 0xe00;
 
-#     cell_type =  "CELL_MACRO_GNB";
-
-    gNB_name  =  "du-rfsim";
+    gNB_name  =  "oai-du";
 
     // Tracking area code, 0x0000 and 0xfffe are reserved values
     tracking_area_code  =  {{ .TAC }};
@@ -245,59 +217,56 @@ gNBs =
 
     servingCellConfigCommon = (
     {
- #spCellConfigCommon
-
-      physCellId                                                    = {{ .PHY_CELL_ID }};
 
 #  downlinkConfigCommon
     #frequencyInfoDL
-      # this is 3410.4 MHz => 301 REs from PointA 25 PRBs + 1 RE
-      absoluteFrequencySSB                                          = 630048;
+      # this is 3610.56 MHz
+      absoluteFrequencySSB                                             = 640704;
       dl_frequencyBand                                                 = {{ .DL_FREQ_BAND }};
-      # this is 3410.4 - (51*12*30e-3/2) = 3401.22 MHz
-      dl_absoluteFrequencyPointA                                       = 629436;
+      # this is 3599.94 MHz
+      dl_absoluteFrequencyPointA                                       = 639996;
       #scs-SpecificCarrierList
         dl_offstToCarrier                                              = 0;
 # subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
-        dl_subcarrierSpacing                                           = {{ .DL_SCS }};
+# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
+        dl_subcarrierSpacing                                           = {{ .DL_SCS }};;
         dl_carrierBandwidth                                            = {{ .DL_CARRIER_BW }};
      #initialDownlinkBWP
       #genericParameters
-        # this is RBstart=0,L=50 (275*(L-1))+RBstart
+        # this is RBstart=27,L=48 (275*(L-1))+RBstart
         initialDLBWPlocationAndBandwidth                               = 13750;
 # subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
-        initialDLBWPsubcarrierSpacing                                           = 1;
+# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
+        initialDLBWPsubcarrierSpacing                                   = 1;
       #pdcch-ConfigCommon
-        initialDLBWPcontrolResourceSetZero                              = 11; # this means shift of 14, so Coreset is in PRBs 1..48, SSB starts at PRB 15
-        initialDLBWPsearchSpaceZero                                             = 0;
+        initialDLBWPcontrolResourceSetZero                              = 12;
+        initialDLBWPsearchSpaceZero                                     = 0;
 
-  #uplinkConfigCommon 
+  #uplinkConfigCommon
      #frequencyInfoUL
-      ul_frequencyBand                                                 = {{ .UL_FREQ_BAND }};
+      ul_frequencyBand                                              = {{ .UL_FREQ_BAND }};
       #scs-SpecificCarrierList
-      ul_offstToCarrier                                              = 0;
+      ul_offstToCarrier                                             = 0;
 # subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
-      ul_subcarrierSpacing                                           = {{ .UL_SCS }};
-      ul_carrierBandwidth                                            = {{ .UL_CARRIER_BW }};
+# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
+      ul_subcarrierSpacing                                          = {{ .UL_SCS }};;
+      ul_carrierBandwidth                                           = {{ .UL_CARRIER_BW }};
       pMax                                                          = 20;
      #initialUplinkBWP
       #genericParameters
         initialULBWPlocationAndBandwidth                            = 13750;
 # subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
-        initialULBWPsubcarrierSpacing                                           = 1;
+# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
+        initialULBWPsubcarrierSpacing                               = 1;
       #rach-ConfigCommon
         #rach-ConfigGeneric
-          prach_ConfigurationIndex                                  = 100;
+          prach_ConfigurationIndex                                  = 98;
 #prach_msg1_FDM
 #0 = one, 1=two, 2=four, 3=eight
           prach_msg1_FDM                                            = 0;
           prach_msg1_FrequencyStart                                 = 0;
-          zeroCorrelationZoneConfig                                 = 15;
-          preambleReceivedTargetPower                               = -104;
+          zeroCorrelationZoneConfig                                 = 13;
+          preambleReceivedTargetPower                               = -96;
 #preamblTransMax (0...10) = (3,4,5,6,7,8,10,20,50,100,200)
           preambleTransMax                                          = 6;
 #powerRampingStep
@@ -308,9 +277,9 @@ gNBs =
         ra_ResponseWindow                                           = 4;
 #ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR
 #1=oneeighth,2=onefourth,3=half,4=one,5=two,6=four,7=eight,8=sixteen
-        ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR                = 3;
-#oneHalf (0..15) 4,8,12,16,...60,64
-        ssb_perRACH_OccasionAndCB_PreamblesPerSSB                   = 15;
+        ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR                = 4;
+#one (0..15) 4,8,12,16,...60,64
+        ssb_perRACH_OccasionAndCB_PreamblesPerSSB                   = 14;
 #ra_ContentionResolutionTimer
 #(0..7) 8,16,24,32,40,48,56,64
         ra_ContentionResolutionTimer                                = 7;
@@ -319,29 +288,27 @@ gNBs =
 #1 = 839, 2 = 139
         prach_RootSequenceIndex_PR                                  = 2;
         prach_RootSequenceIndex                                     = 1;
-        # SCS for msg1, can only be 15 for 30 kHz < 6 GHz, takes precendence over the one derived from prach-ConfigIndex
-        #  
+        # SCS for msg1, can only be 15 for 30 kHz < 6 GHz, takes precedence over the one derived from prach-ConfigIndex
+        #
         msg1_SubcarrierSpacing                                      = 1,
 # restrictedSetConfig
 # 0=unrestricted, 1=restricted type A, 2=restricted type B
         restrictedSetConfig                                         = 0,
 
         msg3_DeltaPreamble                                          = 1;
-        p0_NominalWithGrant                                         =-96;
+        p0_NominalWithGrant                                         =-90;
 
 # pucch-ConfigCommon setup :
 # pucchGroupHopping
 # 0 = neither, 1= group hopping, 2=sequence hopping
         pucchGroupHopping                                           = 0;
         hoppingId                                                   = 40;
-        p0_nominal                                                  = -96;
-# ssb_PositionsInBurs_BitmapPR
-# 1=short, 2=medium, 3=long
-      ssb_PositionsInBurst_PR                                       = 2;
+        p0_nominal                                                  = -90;
+
       ssb_PositionsInBurst_Bitmap                                   = 1;
 
 # ssb_periodicityServingCell
-# 0 = ms5, 1=ms10, 2=ms20, 3=ms40, 4=ms80, 5=ms160, 6=spare2, 7=spare1 
+# 0 = ms5, 1=ms10, 2=ms20, 3=ms40, 4=ms80, 5=ms160, 6=spare2, 7=spare1
       ssb_periodicityServingCell                                    = 2;
 
 # dmrs_TypeA_position
@@ -349,22 +316,23 @@ gNBs =
       dmrs_TypeA_Position                                           = 0;
 
 # subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
+# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
       subcarrierSpacing                                             = 1;
 
 
   #tdd-UL-DL-ConfigurationCommon
 # subcarrierSpacing
-# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120  
+# 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
       referenceSubcarrierSpacing                                    = 1;
-      # pattern1 
+      # pattern1
       # dl_UL_TransmissionPeriodicity
       # 0=ms0p5, 1=ms0p625, 2=ms1, 3=ms1p25, 4=ms2, 5=ms2p5, 6=ms5, 7=ms10
-      dl_UL_TransmissionPeriodicity                                 = 5;
-      nrofDownlinkSlots                                             = 2;
+      dl_UL_TransmissionPeriodicity                                 = 6;
+      nrofDownlinkSlots                                             = 7;
       nrofDownlinkSymbols                                           = 6;
       nrofUplinkSlots                                               = 2;
       nrofUplinkSymbols                                             = 4;
+
 
       ssPBCH_BlockPower                                             = -25;
      }
@@ -387,7 +355,6 @@ MACRLCs = (
     num_cc           = 1;
     tr_s_preference  = "local_L1";
     tr_n_preference  = "f1";
-    local_n_if_name = "f1";
     local_n_address = {{ .F1C_DU_IP }};
     remote_n_address = {{ .F1C_CU_IP }};
     local_n_portc   = 500;
@@ -396,7 +363,6 @@ MACRLCs = (
     remote_n_portd  = 2152;
     pusch_TargetSNRx10          = 200;
     pucch_TargetSNRx10          = 200;
-    ulsch_max_frame_inactivity = 1;
   }
 );
 
@@ -412,20 +378,20 @@ L1s = (
 
 RUs = (
     {     
-       local_rf       = "yes"
-         nb_tx          = 1
-         nb_rx          = 1
-         att_tx         = 0
-         att_rx         = 0;
-         bands          = [78];
-         max_pdschReferenceSignalPower = -27;
-         max_rxgain                    = 114;
-         eNB_instances  = [0];
-         #beamforming 1x4 matrix:
-         bf_weights = [0x00007fff, 0x0000, 0x0000, 0x0000];
-         clock_src = "internal";
+    local_rf       = "yes"
+    nb_tx          = 1
+    nb_rx          = 1
+    att_tx         = 0
+    att_rx         = 0;
+    bands          = [78];
+    max_pdschReferenceSignalPower = -27;
+    max_rxgain                    = 114;
+    eNB_instances  = [0];
+    #beamforming 1x4 matrix:
+    bf_weights = [0x00007fff, 0x0000, 0x0000, 0x0000];
+    clock_src = "internal";
     }
-);  
+);
 
 THREAD_STRUCT = (
   {
@@ -436,23 +402,21 @@ THREAD_STRUCT = (
   }
 );
 rfsimulator: {
-serveraddr = "server";
+    serveraddr = "server";
     serverport = "4043";
     options = (); #("saviq"); or/and "chanmod"
     modelname = "AWGN";
     IQfile = "/tmp/rfsimulator.iqs"
 }
 
-     log_config :
-     {
-       global_log_level                      ="info";
-       hw_log_level                          ="info";
-       phy_log_level                         ="info";
-       mac_log_level                         ="info";
-       rlc_log_level                         ="info";
-       pdcp_log_level                        ="info";
-       rrc_log_level                         ="info";
-       f1ap_log_level                         ="info";
-       ngap_log_level                         ="debug";
-    };
+log_config :
+{
+    global_log_level                      ="info";
+    hw_log_level                          ="info";
+    phy_log_level                         ="info";
+    mac_log_level                         ="info";
+    rlc_log_level                         ="info";
+    f1ap_log_level                        ="info";
+};
+
 `

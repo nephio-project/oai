@@ -102,7 +102,7 @@ func (resource DuResources) GetConfigMap(log logr.Logger, ranDeployment *workloa
 			"gnb.conf": configuration,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "oai-gnb-du-configmap",
+			Name: "oai-du-configmap",
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -134,15 +134,15 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 	deployment1 := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app.kubernetes.io/name": "oai-gnb-du",
+				"app.kubernetes.io/name": "oai-du",
 			},
-			Name: "oai-gnb-du",
+			Name: "oai-du",
 		},
 		Spec: appsv1.DeploymentSpec{
 			Paused: false,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": "oai-gnb-du",
+					"app.kubernetes.io/name": "oai-du",
 				},
 			},
 			Strategy: appsv1.DeploymentStrategy{
@@ -152,14 +152,14 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: podAnnotations,
 					Labels: map[string]string{
-						"app":                    "oai-gnb-du",
-						"app.kubernetes.io/name": "oai-gnb-du",
+						"app":                    "oai-du",
+						"app.kubernetes.io/name": "oai-du",
 					},
 				},
 				Spec: corev1.PodSpec{
 					HostIPC:                       false,
 					HostNetwork:                   false,
-					ServiceAccountName:            "oai-gnb-du-sa",
+					ServiceAccountName:            "oai-du-sa",
 					TerminationGracePeriodSeconds: pointer.Int64(5),
 					Volumes: []corev1.Volume{
 
@@ -168,7 +168,7 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "oai-gnb-du-configmap",
+										Name: "oai-du-configmap",
 									},
 								},
 							},
@@ -219,7 +219,7 @@ func (resource DuResources) GetDeployment(log logr.Logger, ranDeployment *worklo
 									MountPath: "/opt/oai-gnb/etc/gnb.conf",
 								},
 							},
-							Name: "gnbdu",
+							Name: "du",
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: pointer.Bool(true),
 							},
@@ -246,7 +246,7 @@ func (resource DuResources) GetServiceAccount() []*corev1.ServiceAccount {
 
 	serviceAccount1 := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "oai-gnb-du-sa",
+			Name: "oai-du-sa",
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -262,13 +262,13 @@ func (resource DuResources) GetService() []*corev1.Service {
 	service1 := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app.kubernetes.io/name": "oai-gnb-du",
+				"app.kubernetes.io/name": "oai-du",
 			},
-			Name: "oai-gnb-du",
+			Name: "oai-du",
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"app.kubernetes.io/name": "oai-gnb-du",
+				"app.kubernetes.io/name": "oai-du",
 			},
 			Type:      corev1.ServiceType("ClusterIP"),
 			ClusterIP: "None",
@@ -315,13 +315,13 @@ func (resource DuResources) GetService() []*corev1.Service {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app.kubernetes.io/name": "oai-gnb-du-telnet-lb",
+				"app.kubernetes.io/name": "oai-du-telnet-lb",
 			},
-			Name: "oai-gnb-du-telnet-lb",
+			Name: "oai-du-telnet-lb",
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"app.kubernetes.io/name": "oai-gnb-du",
+				"app.kubernetes.io/name": "oai-du",
 			},
 			Type: corev1.ServiceType("LoadBalancer"),
 			Ports: []corev1.ServicePort{

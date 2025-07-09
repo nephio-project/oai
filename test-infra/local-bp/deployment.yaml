@@ -19,7 +19,7 @@ spec:
       serviceAccountName: oai-ran-operator
       containers:
       - name: operator
-        image: docker.io/library/local-ran-operator:v0.1
+        image: docker.io/library/local-ran-operator:latest
         resources:
           limits:
             cpu: 500m

@@ -35,7 +35,7 @@ func (resource CuCpResources) GetServiceAccount() []*corev1.ServiceAccount {
 
 	serviceAccount1 := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "oai-gnb-cu-cp-sa",
+			Name: "oai-cu-cp-sa",
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -126,7 +126,7 @@ func (resource CuCpResources) GetConfigMap(log logr.Logger, ranDeployment *workl
 			"gnb.conf": configuration,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "oai-gnb-cu-cp-configmap",
+			Name: "oai-cu-cp-configmap",
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -167,16 +167,16 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 	deployment1 := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app.kubernetes.io/name": "oai-gnb-cu-cp",
+				"app.kubernetes.io/name": "oai-cu-cp",
 			},
-			Name: "oai-gnb-cu-cp",
+			Name: "oai-cu-cp",
 		},
 		Spec: appsv1.DeploymentSpec{
 			Paused:   false,
 			Replicas: pointer.Int32(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/name": "oai-gnb-cu-cp",
+					"app.kubernetes.io/name": "oai-cu-cp",
 				},
 			},
 			Strategy: appsv1.DeploymentStrategy{
@@ -185,8 +185,8 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app":                    "oai-gnb-cu-cp-cp",
-						"app.kubernetes.io/name": "oai-gnb-cu-cp",
+						"app":                    "oai-cu-cp-cp",
+						"app.kubernetes.io/name": "oai-cu-cp",
 					},
 					Annotations: podAnnotations,
 				},
@@ -243,7 +243,7 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 									Protocol:      corev1.Protocol("UDP"),
 								},
 							},
-							Name: "gnbcucp",
+							Name: "cucp",
 						},
 					},
 					DNSPolicy:   corev1.DNSPolicy("ClusterFirst"),
@@ -256,7 +256,7 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "oai-gnb-cu-cp-configmap",
+										Name: "oai-cu-cp-configmap",
 									},
 								},
 							},
@@ -266,7 +266,7 @@ func (resource CuCpResources) GetDeployment(log logr.Logger, ranDeployment *work
 					HostIPC:                       false,
 					RestartPolicy:                 corev1.RestartPolicy("Always"),
 					SchedulerName:                 "default-scheduler",
-					ServiceAccountName:            "oai-gnb-cu-cp-sa",
+					ServiceAccountName:            "oai-cu-cp-sa",
 				},
 			},
 		},
