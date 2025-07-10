@@ -91,18 +91,18 @@ security = {
   drb_ciphering = "yes";
   drb_integrity = "no";
 };
-     log_config :
-     {
-       global_log_level                      ="info";
-       hw_log_level                          ="info";
-       phy_log_level                         ="info";
-       mac_log_level                         ="info";
-       rlc_log_level                         ="debug";
-       pdcp_log_level                        ="info";
-       rrc_log_level                         ="info";
-       f1ap_log_level                         ="info";
-       ngap_log_level                         ="debug";
-    };
+log_config :
+{
+global_log_level                      ="info";
+hw_log_level                          ="info";
+phy_log_level                         ="info";
+mac_log_level                         ="info";
+rlc_log_level                         ="debug";
+pdcp_log_level                        ="info";
+rrc_log_level                         ="info";
+f1ap_log_level                         ="info";
+ngap_log_level                         ="debug";
+};
 
 `
 
@@ -229,7 +229,7 @@ gNBs =
         dl_offstToCarrier                                              = 0;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-        dl_subcarrierSpacing                                           = {{ .DL_SCS }};;
+        dl_subcarrierSpacing                                           = {{ .DL_SCS }};
         dl_carrierBandwidth                                            = {{ .DL_CARRIER_BW }};
      #initialDownlinkBWP
       #genericParameters
@@ -249,7 +249,7 @@ gNBs =
       ul_offstToCarrier                                             = 0;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-      ul_subcarrierSpacing                                          = {{ .UL_SCS }};;
+      ul_subcarrierSpacing                                          = {{ .UL_SCS }};
       ul_carrierBandwidth                                           = {{ .UL_CARRIER_BW }};
       pMax                                                          = 20;
      #initialUplinkBWP
