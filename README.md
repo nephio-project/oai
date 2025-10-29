@@ -1,4 +1,6 @@
 # OpenAirInterface (OAI) RAN Operators
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnephio-project%2Foai.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnephio-project%2Foai?ref=badge_shield)
+
 
 This repository contains source code for k8s custom operator for [OpenAirInterface](https://gitlab.eurecom.fr/oai/openairinterface5g/-/tree/develop?ref_type=heads) RAN functions (CU-CP, CU-UP, DU) which can be deployed in Nephio. <br />
 The operator is currently common for all the RAN functions (CU-CP, CU-UP, DU). <br />
@@ -59,3 +61,7 @@ The [document](https://github.com/nephio-project/catalog/blob/main/workloads/oai
 To know more about the OpenAirInterface project [checkout their website](https://openairinterface.org/).  
 
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnephio-project%2Foai.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnephio-project%2Foai?ref=badge_large)
