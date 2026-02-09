@@ -33,8 +33,28 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
+
+type MockStatusWriter struct {
+	mock.Mock
+}
+
+func (m *MockStatusWriter) Update(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error {
+	args := m.Called(ctx, obj)
+	return args.Error(0)
+}
+
+func (m *MockStatusWriter) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
+	args := m.Called(ctx, obj, patch)
+	return args.Error(0)
+}
+
+func (m *MockStatusWriter) Create(ctx context.Context, obj client.Object, subResource client.Object, opts ...client.SubResourceCreateOption) error {
+	args := m.Called(ctx, obj, subResource)
+	return args.Error(0)
+}
 
 func TestGetConfigs(t *testing.T) {
 	cases := map[string]struct {
@@ -388,21 +408,9 @@ func TestReconcileErrorScenarios(t *testing.T) {
 						},
 					},
 				},
-				Status: workloadv1alpha1.NFDeploymentStatus{
-					// The operator must give this Status-Condition
-					Conditions: []metav1.Condition{
-						{
-							Type:               "invalidConfigInfo",
-							LastTransitionTime: metav1.Time{Time: time.Now()},
-							Status:             metav1.ConditionFalse,
-							Reason:             "invalidConfigInfo",
-							Message:            "Failed to get required ConfigInfo | Error: " + "Not supported API version \"dummy-apiversion\"",
-						},
-					},
-				},
 			},
 			mockReturnErr: nil,
-			expectedError: fmt.Errorf("Not supported API version \"dummy-apiversion\""),
+			expectedError: fmt.Errorf("not supported API version \"dummy-apiversion\""),
 		},
 	}
 
@@ -413,6 +421,10 @@ func TestReconcileErrorScenarios(t *testing.T) {
 				configObj := args.Get(2).(*workloadv1alpha1.NFDeployment)
 				*configObj = *tc.ranDeployment // tc.ranDeployment is what r.Get will store in 3rd Argument
 			})
+
+			statusWriterMock := &MockStatusWriter{}
+			statusWriterMock.On("Update", context.TODO(), mock.AnythingOfType("*v1alpha1.NFDeployment")).Return(nil)
+			clientMock.On("Status").Return(statusWriterMock)
 
 			ranReconcilerObj := RANDeploymentReconciler{
 				clientMock,
