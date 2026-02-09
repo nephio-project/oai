@@ -1,7 +1,7 @@
-GO_VERSION ?= 1.20.5
-GOLANG_CI_VER ?= v1.52
-GOSEC_VER ?= 2.15.0
-MOCKERY_VERSION=2.37.1
+GO_VERSION ?= 1.25
+GOLANG_CI_VER ?= v2.8.0
+GOSEC_VER ?= latest
+MOCKERY_VERSION=3.6.3
 TEST_COVERAGE_FILE=lcov.info
 TEST_COVERAGE_HTML_FILE=coverage_unit.html
 TEST_COVERAGE_FUNC_FILE=func_coverage.out
@@ -78,14 +78,6 @@ else
 	golangci-lint run ./... -v --timeout 10m
 endif
 
-# Install link at https://github.com/securego/gosec#install if not running inside a container
-.PHONY: gosec
-gosec: ## inspects source code for security problem by scanning the Go Abstract Syntax Tree
-ifeq ($(CONTAINER_RUNNABLE), 0)
-	$(CONTAINER_RUNTIME) run -it -v ${PWD}:/go/src -w /go/src docker.io/securego/gosec:${GOSEC_VER} ./...
-else
-	gosec ./...
-endif
 
 .PHONY: install-mockery
 install-mockery: ## install mockery
@@ -98,15 +90,21 @@ endif
 .PHONY: generate-mocks
 generate-mocks:
 ifeq ($(CONTAINER_RUNNABLE), 0)
-		sudo $(CONTAINER_RUNTIME) run --security-opt label=disable -v ${PWD}:/src -w /src docker.io/vektra/mockery:v${MOCKERY_VERSION}
+		find . -name .mockery.yaml \
+			-exec echo generating mocks specified in {} . . . \; \
+			-execdir $(CONTAINER_RUNTIME) run --rm --security-opt label=disable -v  .:/src -w /src docker.io/vektra/mockery:v${MOCKERY_VERSION} \; \
+			-exec echo generated mocks specified in {} \;
 else
-		mockery
+		find . -name .mockery.yaml \
+			-exec echo generating mocks specified in {} . . . \; \
+			-execdir mockery \; \
+			-exec echo generated mocks specified in {} \;
 endif
 
 .PHONY: unit
 unit: ## Run unit tests against code.
 ifeq ($(CONTAINER_RUNNABLE), 0)
-	$(CONTAINER_RUNTIME) run -it -v ${PWD}:/go/src -w /go/src docker.io/library/golang:${GO_VERSION}-alpine3.17 \
+	$(CONTAINER_RUNTIME) run -it -v ${PWD}:/go/src -w /go/src docker.io/library/golang:${GO_VERSION}-alpine \
 	/bin/sh -c "go test ./... -v -coverprofile ${TEST_COVERAGE_FILE}; \
 	go tool cover -html=${TEST_COVERAGE_FILE} -o ${TEST_COVERAGE_HTML_FILE}; \
 	go tool cover -func=${TEST_COVERAGE_FILE} -o ${TEST_COVERAGE_FUNC_FILE}"
@@ -146,11 +144,13 @@ $(LOCALBIN):
 KUBECTL ?= kubectl
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+GOSEC ?= $(LOCALBIN)/gosec
 
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.1
-CONTROLLER_TOOLS_VERSION ?= v0.12.0
+CONTROLLER_TOOLS_VERSION ?= v0.20.0
+GOSEC_VERSION ?= latest
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
@@ -166,3 +166,9 @@ controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessar
 $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || \
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+
+.PHONY: gosec
+gosec: $(GOSEC) ## inspects source code for security problem by scanning the Go Abstract Syntax Tree
+	$(GOSEC) ./...
+$(GOSEC): $(LOCALBIN)
+	test -s $(LOCALBIN)/gosec || GOBIN=$(LOCALBIN) go install github.com/securego/gosec/v2/cmd/gosec@$(GOSEC_VERSION)

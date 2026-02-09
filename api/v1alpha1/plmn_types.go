@@ -42,11 +42,15 @@ type PLMNList struct {
 	Items           []PLMN `json:"items" yaml:"items"`
 }
 
+// +kubebuilder:object:generate=true
+
 // PLMNSpec defines the characteristics of a deployment of a network function
 type PLMNSpec struct {
 	// PLMNInfo defines the list of PLMN to configure for core NFs
 	PLMNInfo []PLMNInfo `json:"PLMNInfo" yaml:"PLMNInfo"`
 }
+
+// +kubebuilder:object:generate=true
 
 // PLMNInfo defines the structure of PLMN
 type PLMNInfo struct {
@@ -60,6 +64,8 @@ type PLMNInfo struct {
 	NSSAI []NSSAI `json:"nssai" yaml:"nssai"`
 }
 
+// +kubebuilder:object:generate=true
+
 // PLMNID defines the Public Land Mobile Network Identifier
 type PLMNID struct {
 	// mcc defines the mobile country code
@@ -69,6 +75,8 @@ type PLMNID struct {
 	// +kubebuilder:validation:Pattern=`[0-9][0-9][0-9]|[0-9][0-9]`
 	MNC string `json:"mnc" yaml:"mnc"`
 }
+
+// +kubebuilder:object:generate=true
 
 // NSSAI defines the Network Slice Selection Assistance Information
 type NSSAI struct {

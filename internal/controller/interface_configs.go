@@ -44,7 +44,7 @@ func GetFirstInterfaceConfig(interfaceConfigs []workloadv1alpha1.InterfaceConfig
 		}
 	}
 
-	return nil, fmt.Errorf("Interface %q not found", interfaceName)
+	return nil, fmt.Errorf("interface %q not found", interfaceName)
 }
 
 func GetFirstInterfaceConfigIPv4(interfaceConfigs []workloadv1alpha1.InterfaceConfig, interfaceName string) (string, error) {

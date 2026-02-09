@@ -25,7 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	workloadnfconfig "workload.nephio.org/ran_deployment/api/v1alpha1"
 )
@@ -50,7 +50,7 @@ func TestCreateNetworkAttachmentDefinitionNetworksCuCP(t *testing.T) {
 					Name: "e1",
 					IPv4: &workloadv1alpha1.IPv4{
 						Address: "172.5.3.6/24",
-						Gateway: pointer.String("172.7.1.1"),
+						Gateway: ptr.To("172.7.1.1"),
 					},
 					VLANID: uint16Ptr(2),
 				},
@@ -58,14 +58,14 @@ func TestCreateNetworkAttachmentDefinitionNetworksCuCP(t *testing.T) {
 					Name: "f1c",
 					IPv4: &workloadv1alpha1.IPv4{
 						Address: "172.5.1.3/24",
-						Gateway: pointer.String("172.5.1.1"),
+						Gateway: ptr.To("172.5.1.1"),
 					},
 					VLANID: uint16Ptr(2),
 				}, {
 					Name: "n2",
 					IPv4: &workloadv1alpha1.IPv4{
 						Address: "172.6.0.254/24",
-						Gateway: pointer.String("172.6.0.1"),
+						Gateway: ptr.To("172.6.0.1"),
 					},
 					VLANID: uint16Ptr(6),
 				},
@@ -128,21 +128,21 @@ func TestGetDeploymentCuCp(t *testing.T) {
 							Name: "e1",
 							IPv4: &workloadv1alpha1.IPv4{
 								Address: "172.5.1.3/24",
-								Gateway: pointer.String("172.5.1.1"),
+								Gateway: ptr.To("172.5.1.1"),
 							},
 							VLANID: uint16Ptr(2),
 						}, {
 							Name: "n2",
 							IPv4: &workloadv1alpha1.IPv4{
 								Address: "172.6.0.254/24",
-								Gateway: pointer.String("172.6.0.1"),
+								Gateway: ptr.To("172.6.0.1"),
 							},
 							VLANID: uint16Ptr(6),
 						}, {
 							Name: "f1c",
 							IPv4: &workloadv1alpha1.IPv4{
 								Address: "172.6.0.7/24",
-								Gateway: pointer.String("172.6.0.1"),
+								Gateway: ptr.To("172.6.0.1"),
 							},
 							VLANID: uint16Ptr(7),
 						},
@@ -192,21 +192,21 @@ func TestGetDeploymentCuCp(t *testing.T) {
 							Name: "e1",
 							IPv4: &workloadv1alpha1.IPv4{
 								Address: "172.5.1.3/24",
-								Gateway: pointer.String("172.5.1.1"),
+								Gateway: ptr.To("172.5.1.1"),
 							},
 							VLANID: uint16Ptr(2),
 						}, {
 							Name: "n2",
 							IPv4: &workloadv1alpha1.IPv4{
 								Address: "172.6.0.254/24",
-								Gateway: pointer.String("172.6.0.1"),
+								Gateway: ptr.To("172.6.0.1"),
 							},
 							VLANID: uint16Ptr(6),
 						}, {
 							Name: "f1c",
 							IPv4: &workloadv1alpha1.IPv4{
 								Address: "172.6.0.7/24",
-								Gateway: pointer.String("172.6.0.1"),
+								Gateway: ptr.To("172.6.0.1"),
 							},
 							VLANID: uint16Ptr(7),
 						},
@@ -238,7 +238,7 @@ func TestGetDeploymentCuCp(t *testing.T) {
 					t.Error("GetDeployment returned nil wanted DeploymentObject")
 					return
 				}
-				gotPodAnnotations := got[0].Spec.Template.ObjectMeta.Annotations
+				gotPodAnnotations := got[0].Spec.Template.Annotations
 				if len(gotPodAnnotations) == 0 {
 					t.Error("PodAnnotations Not Set During GetDeployment")
 				}
@@ -300,21 +300,21 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						Name: "e1",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.5.1.3/24",
-							Gateway: pointer.String("172.5.1.1"),
+							Gateway: ptr.To("172.5.1.1"),
 						},
 						VLANID: uint16Ptr(2),
 					}, {
 						Name: "n2",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
-							Gateway: pointer.String("172.6.0.1"),
+							Gateway: ptr.To("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(6),
 					}, {
 						Name: "f1c",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.7/24",
-							Gateway: pointer.String("172.6.0.1"),
+							Gateway: ptr.To("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(7),
 					},
@@ -327,7 +327,7 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						Name: "n2",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.5.1.3/24",
-							Gateway: pointer.String("172.5.1.1"),
+							Gateway: ptr.To("172.5.1.1"),
 						},
 						VLANID: uint16Ptr(2),
 					},
@@ -351,7 +351,7 @@ func TestGetConfigMapCuCp(t *testing.T) {
 							NSSAI: []workloadnfconfig.NSSAI{
 								{
 									SST: 1,
-									SD:  pointer.String("ffffff"),
+									SD:  ptr.To("ffffff"),
 								},
 							},
 						},
@@ -374,7 +374,7 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						Name: "n2",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
-							Gateway: pointer.String("172.6.0.1"),
+							Gateway: ptr.To("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(6),
 					},
@@ -392,14 +392,14 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						Name: "e1",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.5.1.3/24",
-							Gateway: pointer.String("172.5.1.1"),
+							Gateway: ptr.To("172.5.1.1"),
 						},
 						VLANID: uint16Ptr(2),
 					}, {
 						Name: "n2",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
-							Gateway: pointer.String("172.6.0.1"),
+							Gateway: ptr.To("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(6),
 					},
@@ -417,21 +417,21 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						Name: "e1",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.5.1.3/24",
-							Gateway: pointer.String("172.5.1.1"),
+							Gateway: ptr.To("172.5.1.1"),
 						},
 						VLANID: uint16Ptr(2),
 					}, {
 						Name: "n2",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
-							Gateway: pointer.String("172.6.0.1"),
+							Gateway: ptr.To("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(6),
 					}, {
 						Name: "f1c",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.7/24",
-							Gateway: pointer.String("172.6.0.1"),
+							Gateway: ptr.To("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(7),
 					},
@@ -449,21 +449,21 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						Name: "e1",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.5.1.3/24",
-							Gateway: pointer.String("172.5.1.1"),
+							Gateway: ptr.To("172.5.1.1"),
 						},
 						VLANID: uint16Ptr(2),
 					}, {
 						Name: "n2",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
-							Gateway: pointer.String("172.6.0.1"),
+							Gateway: ptr.To("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(6),
 					}, {
 						Name: "f1c",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.7/24",
-							Gateway: pointer.String("172.6.0.1"),
+							Gateway: ptr.To("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(7),
 					},
@@ -476,7 +476,7 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						Name: "n2",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.5.1.3/24",
-							Gateway: pointer.String("172.5.1.1"),
+							Gateway: ptr.To("172.5.1.1"),
 						},
 						VLANID: uint16Ptr(2),
 					},
@@ -493,21 +493,21 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						Name: "e1",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.5.1.3/24",
-							Gateway: pointer.String("172.5.1.1"),
+							Gateway: ptr.To("172.5.1.1"),
 						},
 						VLANID: uint16Ptr(2),
 					}, {
 						Name: "n2",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.254/24",
-							Gateway: pointer.String("172.6.0.1"),
+							Gateway: ptr.To("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(6),
 					}, {
 						Name: "f1c",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.6.0.7/24",
-							Gateway: pointer.String("172.6.0.1"),
+							Gateway: ptr.To("172.6.0.1"),
 						},
 						VLANID: uint16Ptr(7),
 					},
@@ -520,7 +520,7 @@ func TestGetConfigMapCuCp(t *testing.T) {
 						Name: "n2",
 						IPv4: &workloadv1alpha1.IPv4{
 							Address: "172.5.1.3/24",
-							Gateway: pointer.String("172.5.1.1"),
+							Gateway: ptr.To("172.5.1.1"),
 						},
 						VLANID: uint16Ptr(2),
 					},
@@ -560,9 +560,10 @@ func TestGetConfigMapCuCp(t *testing.T) {
 				},
 			}
 			// Simulating JSON UnMarshal Error:
-			if tc.wantedError == "RANConfig Marshal Error" {
+			switch tc.wantedError {
+			case "RANConfig Marshal Error":
 				configInfo.ConfigSelfInfo["RANConfig"] = runtime.RawExtension{Raw: []byte("")}
-			} else if tc.wantedError == "PLMN Marshal Error" {
+			case "PLMN Marshal Error":
 				configInfo.ConfigSelfInfo["PLMN"] = runtime.RawExtension{Raw: []byte("")}
 			}
 
