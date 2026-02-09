@@ -31,7 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -47,7 +47,7 @@ func TestGetConfigs(t *testing.T) {
 		"Normal | Api-version: ref.nephio.org/v1alpha1 ": {
 			ranDeploymentParameterRef: []workloadv1alpha1.ObjectReference{{
 				APIVersion: "ref.nephio.org/v1alpha1",
-				Name:       pointer.String("ABC"),
+				Name:       ptr.To("ABC"),
 			}},
 			mock3rdArgsType: "*v1alpha1.Config",
 			mockReturnRefVal: &configref.Config{Spec: configref.ConfigSpec{
@@ -59,7 +59,7 @@ func TestGetConfigs(t *testing.T) {
 		"Mock-Error (k8s not able to get the object as requested by ranDeploymentParameterRef)| Api-version: ref.nephio.org/v1alpha1 ": {
 			ranDeploymentParameterRef: []workloadv1alpha1.ObjectReference{{
 				APIVersion: "ref.nephio.org/v1alpha1",
-				Name:       pointer.String("ABC"),
+				Name:       ptr.To("ABC"),
 			}},
 			mock3rdArgsType:  "*v1alpha1.Config",
 			mockReturnRefVal: &configref.Config{},
@@ -69,7 +69,7 @@ func TestGetConfigs(t *testing.T) {
 		"Mock-Returned-Reference-UnMarshal-Error | Api-version: ref.nephio.org/v1alpha1 ": {
 			ranDeploymentParameterRef: []workloadv1alpha1.ObjectReference{{
 				APIVersion: "ref.nephio.org/v1alpha1",
-				Name:       pointer.String("ABC"),
+				Name:       ptr.To("ABC"),
 			}},
 			mock3rdArgsType: "*v1alpha1.Config",
 			mockReturnRefVal: &configref.Config{Spec: configref.ConfigSpec{
@@ -81,7 +81,7 @@ func TestGetConfigs(t *testing.T) {
 		"Normal | Api-version: workload.nephio.org/v1alpha1 ": {
 			ranDeploymentParameterRef: []workloadv1alpha1.ObjectReference{{
 				APIVersion: "workload.nephio.org/v1alpha1",
-				Name:       pointer.String("ABC"),
+				Name:       ptr.To("ABC"),
 			}},
 			mock3rdArgsType: "*v1alpha1.NFConfig",
 			mockReturnRefVal: &workloadv1alpha1.NFConfig{Spec: workloadv1alpha1.NFConfigSpec{
@@ -97,7 +97,7 @@ func TestGetConfigs(t *testing.T) {
 		"Mock-Error (k8s not able to get the object as requested by ranDeploymentParameterRef) | Api-version: workload.nephio.org/v1alpha1 ": {
 			ranDeploymentParameterRef: []workloadv1alpha1.ObjectReference{{
 				APIVersion: "workload.nephio.org/v1alpha1",
-				Name:       pointer.String("ABC"),
+				Name:       ptr.To("ABC"),
 			}},
 			mock3rdArgsType:  "*v1alpha1.NFConfig",
 			mockReturnRefVal: &workloadv1alpha1.NFConfig{},
@@ -107,7 +107,7 @@ func TestGetConfigs(t *testing.T) {
 		"Mock-Returned-Reference-UnMarshal-Error | Api-version: workload.nephio.org/v1alpha1 ": {
 			ranDeploymentParameterRef: []workloadv1alpha1.ObjectReference{{
 				APIVersion: "workload.nephio.org/v1alpha1",
-				Name:       pointer.String("ABC"),
+				Name:       ptr.To("ABC"),
 			}},
 			mock3rdArgsType: "*v1alpha1.NFConfig",
 			mockReturnRefVal: &workloadv1alpha1.NFConfig{Spec: workloadv1alpha1.NFConfigSpec{
@@ -122,7 +122,7 @@ func TestGetConfigs(t *testing.T) {
 		"Mandatory Kinds Not Found in Mock-Returned-Reference| Api-version: workload.nephio.org/v1alpha1 ": {
 			ranDeploymentParameterRef: []workloadv1alpha1.ObjectReference{{
 				APIVersion: "workload.nephio.org/v1alpha1",
-				Name:       pointer.String("ABC"),
+				Name:       ptr.To("ABC"),
 			}},
 			mock3rdArgsType: "*v1alpha1.NFConfig",
 			mockReturnRefVal: &workloadv1alpha1.NFConfig{Spec: workloadv1alpha1.NFConfigSpec{
@@ -136,7 +136,7 @@ func TestGetConfigs(t *testing.T) {
 		"Not-Supported API-Version Error": {
 			ranDeploymentParameterRef: []workloadv1alpha1.ObjectReference{{
 				APIVersion: "dummy-api",
-				Name:       pointer.String("ABC"),
+				Name:       ptr.To("ABC"),
 			}},
 			mock3rdArgsType:  "",
 			mockReturnRefVal: nil,
@@ -149,14 +149,15 @@ func TestGetConfigs(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			clientMock := new(MockClient)
 			clientMock.On("Get", context.TODO(), mock.AnythingOfType("types.NamespacedName"), mock.AnythingOfType(tc.mock3rdArgsType)).Return(tc.mockReturnError).Run(func(args mock.Arguments) {
-				if tc.mock3rdArgsType == "*v1alpha1.Config" {
+				switch tc.mock3rdArgsType {
+				case "*v1alpha1.Config":
 					configObj := args.Get(2).(*configref.Config)
 					mockReturnVal, ok := tc.mockReturnRefVal.(*configref.Config)
 					if !ok {
 						t.Errorf("Test-Case not properly written | mockReturnRefVal should be of type *configref.Config")
 					}
 					*configObj = *mockReturnVal // mockReturnVal is what r.Get will store in 3rd Argument
-				} else if tc.mock3rdArgsType == "*v1alpha1.NFConfig" {
+				case "*v1alpha1.NFConfig":
 					configObj := args.Get(2).(*workloadv1alpha1.NFConfig)
 					mockReturnVal, ok := tc.mockReturnRefVal.(*workloadv1alpha1.NFConfig)
 					if !ok {
@@ -256,7 +257,7 @@ func TestCreateAll(t *testing.T) {
 
 			nfResourceMock := new(MockNfResource)
 			for methodIndex, methodName := range nfResourceMethods {
-				call := nfResourceMock.Mock.On(methodName)
+				call := nfResourceMock.On(methodName)
 				for _, arg := range methodArguments[methodIndex] {
 					call.Arguments = append(call.Arguments, mock.AnythingOfType(arg))
 				}
@@ -317,7 +318,7 @@ func TestDeleteAll(t *testing.T) {
 
 			nfResourceMock := new(MockNfResource)
 			for methodIndex, methodName := range nfResourceMethods {
-				call := nfResourceMock.Mock.On(methodName)
+				call := nfResourceMock.On(methodName)
 				for _, arg := range methodArguments[methodIndex] {
 					call.Arguments = append(call.Arguments, mock.AnythingOfType(arg))
 				}
@@ -383,7 +384,7 @@ func TestReconcileErrorScenarios(t *testing.T) {
 					ParametersRefs: []workloadv1alpha1.ObjectReference{
 						{
 							APIVersion: "dummy-apiversion",
-							Name:       pointer.String("ABC"),
+							Name:       ptr.To("ABC"),
 						},
 					},
 				},

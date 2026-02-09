@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -28,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/strings/slices"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -78,8 +78,8 @@ func (r *RANDeploymentReconciler) CreateAll(ctx context.Context, ranDeployment *
 	var err error
 	namespaceProvided := ranDeployment.Namespace
 	for _, resource := range nfResource.GetServiceAccount() {
-		if resource.ObjectMeta.Namespace == "" {
-			resource.ObjectMeta.Namespace = namespaceProvided
+		if resource.Namespace == "" {
+			resource.Namespace = namespaceProvided
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
@@ -89,8 +89,8 @@ func (r *RANDeploymentReconciler) CreateAll(ctx context.Context, ranDeployment *
 	}
 
 	for _, resource := range nfResource.GetConfigMap(logger, ranDeployment, configInfo) {
-		if resource.ObjectMeta.Namespace == "" {
-			resource.ObjectMeta.Namespace = namespaceProvided
+		if resource.Namespace == "" {
+			resource.Namespace = namespaceProvided
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
@@ -100,8 +100,8 @@ func (r *RANDeploymentReconciler) CreateAll(ctx context.Context, ranDeployment *
 	}
 
 	for _, resource := range nfResource.GetDeployment(logger, ranDeployment, configInfo) {
-		if resource.ObjectMeta.Namespace == "" {
-			resource.ObjectMeta.Namespace = namespaceProvided
+		if resource.Namespace == "" {
+			resource.Namespace = namespaceProvided
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
@@ -110,8 +110,8 @@ func (r *RANDeploymentReconciler) CreateAll(ctx context.Context, ranDeployment *
 		}
 	}
 	for _, resource := range nfResource.GetService() {
-		if resource.ObjectMeta.Namespace == "" {
-			resource.ObjectMeta.Namespace = namespaceProvided
+		if resource.Namespace == "" {
+			resource.Namespace = namespaceProvided
 		}
 		err = r.Create(ctx, resource)
 		if err != nil {
@@ -130,8 +130,8 @@ func (r *RANDeploymentReconciler) DeleteAll(ctx context.Context, ranDeployment *
 	var err error
 	namespaceProvided := ranDeployment.Namespace
 	for _, resource := range nfResource.GetServiceAccount() {
-		if resource.ObjectMeta.Namespace == "" {
-			resource.ObjectMeta.Namespace = namespaceProvided
+		if resource.Namespace == "" {
+			resource.Namespace = namespaceProvided
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
@@ -141,8 +141,8 @@ func (r *RANDeploymentReconciler) DeleteAll(ctx context.Context, ranDeployment *
 	}
 
 	for _, resource := range nfResource.GetConfigMap(logger, ranDeployment, configInfo) {
-		if resource.ObjectMeta.Namespace == "" {
-			resource.ObjectMeta.Namespace = namespaceProvided
+		if resource.Namespace == "" {
+			resource.Namespace = namespaceProvided
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
@@ -152,8 +152,8 @@ func (r *RANDeploymentReconciler) DeleteAll(ctx context.Context, ranDeployment *
 	}
 
 	for _, resource := range nfResource.GetDeployment(logger, ranDeployment, configInfo) {
-		if resource.ObjectMeta.Namespace == "" {
-			resource.ObjectMeta.Namespace = namespaceProvided
+		if resource.Namespace == "" {
+			resource.Namespace = namespaceProvided
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
@@ -164,8 +164,8 @@ func (r *RANDeploymentReconciler) DeleteAll(ctx context.Context, ranDeployment *
 	}
 
 	for _, resource := range nfResource.GetService() {
-		if resource.ObjectMeta.Namespace == "" {
-			resource.ObjectMeta.Namespace = namespaceProvided
+		if resource.Namespace == "" {
+			resource.Namespace = namespaceProvided
 		}
 		err = r.Delete(ctx, resource)
 		if err != nil {
@@ -187,7 +187,8 @@ func (r *RANDeploymentReconciler) GetConfigs(ctx context.Context, ranDeployment 
 	for _, configItem := range configsList {
 
 		logger.Info("Config: ", "config.Name", configItem.Name)
-		if configItem.APIVersion == "ref.nephio.org/v1alpha1" {
+		switch configItem.APIVersion {
+		case "ref.nephio.org/v1alpha1":
 			configInstance := &configref.Config{}
 			if err := r.Get(ctx, types.NamespacedName{Name: *configItem.Name, Namespace: ranDeployment.Namespace}, configInstance); err != nil {
 				logger.Error(err, "Config ref get error")
@@ -202,7 +203,7 @@ func (r *RANDeploymentReconciler) GetConfigs(ctx context.Context, ranDeployment 
 			logger.Info("Config ref:", "configInstance.Kind", result["kind"].(string))
 			kindInfo := result["kind"].(string)
 			configInfo.ConfigRefInfo[kindInfo] = append(configInfo.ConfigRefInfo[kindInfo], configInstance)
-		} else if configItem.APIVersion == "workload.nephio.org/v1alpha1" {
+		case "workload.nephio.org/v1alpha1":
 			configInstance := &workloadv1alpha1.NFConfig{}
 			if err := r.Get(ctx, types.NamespacedName{Name: *configItem.Name, Namespace: ranDeployment.Namespace}, configInstance); err != nil {
 				logger.Error(err, "Config for Self get error")
@@ -221,12 +222,12 @@ func (r *RANDeploymentReconciler) GetConfigs(ctx context.Context, ranDeployment 
 			}
 
 			if !CheckMandatoryKinds(configInfo.ConfigSelfInfo) {
-				err := fmt.Errorf("Not all mandatory Kinds available")
+				err := fmt.Errorf("not all mandatory Kinds available")
 				logger.Error(err, "Config for Self get error")
 				return configInfo, err
 			}
-		} else {
-			err := fmt.Errorf("Not supported API version %q", configItem.APIVersion)
+		default:
+			err := fmt.Errorf("not supported API version %q", configItem.APIVersion)
 			logger.Error(err, "Config for Self get error")
 			return configInfo, err
 		}
@@ -336,7 +337,7 @@ func (r *RANDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// name of our custom finalizer
 	myFinalizerName := "batch.tutorial.kubebuilder.io/finalizer"
 	// examine DeletionTimestamp to determine if object is under deletion
-	if instance.ObjectMeta.DeletionTimestamp.IsZero() {
+	if instance.DeletionTimestamp.IsZero() {
 		// Adding a Finaliser also adds the DeletionTimestamp while deleting
 		if !controllerutil.ContainsFinalizer(instance, myFinalizerName) {
 			// Assumed to be called only during CR-Creation
