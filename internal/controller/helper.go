@@ -38,7 +38,7 @@ func getConfigInstanceByProvider(log logr.Logger, configInstances []*configref.C
 			return nfDeployment
 		}
 	}
-	log.Error(fmt.Errorf("Provider %s not found", provider), "Cannot find provider in Config NFDeployment")
+	log.Error(fmt.Errorf("provider %s not found", provider), "Cannot find provider in Config NFDeployment")
 	return nil
 }
 
