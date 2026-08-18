@@ -54,6 +54,31 @@ presubmits:
         - |
           "/usr/local/bin/checklicense.sh"
 
+  # always_run rather than run_if_changed: generated artifacts can go stale from
+  # a .go change, a go.mod bump, a controller-gen version bump in the Makefile or
+  # a hand edit under config/. A path filter that misses any of those would let
+  # an unexpected or stale generated artifact merge with a green presubmit.
+  - name: oai-operator-verify-codegen
+    decorate: true
+    always_run: true
+    annotations:
+      description: Regenerate the API artifacts in an isolated tree and verify the committed output and the CRD inventory.
+    spec:
+      containers:
+      # The digest the Dockerfile builds with, so this commit verifies the same
+      # way later. Tagged for what the digest actually contains: the Dockerfile
+      # labels the same digest golang:1.25.6-alpine, which no longer matches.
+      # diffutils is not in the image, so verify-codegen.sh sticks to diff
+      # options BusyBox accepts.
+      - image: golang:1.25.7-alpine3.23@sha256:f6751d823c26342f9506c03797d2527668d095b0a15f1862cddb4d927a7a4ced
+        command:
+        - "/bin/sh"
+        - "-c"
+        args:
+        - |
+          apk add --no-cache make bash git
+          make verify
+
   - name: build-push-pre-image-oai
     cluster: default
     always_run: true
