@@ -61,6 +61,38 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+# The write half of what verify-codegen checks: same two generators, same
+# scope. 'make generate manifests' is broader (it scans ./... and also emits
+# RBAC and webhooks), so pointing a failed verification at those would tell a
+# contributor to run something this check does not describe.
+.PHONY: update-api-codegen
+update-api-codegen: controller-gen ## Regenerate the API artifacts this repository verifies.
+	find api -name 'zz_generated*.go' -delete
+	rm -rf config/crd/bases
+	mkdir -p config/crd/bases
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./api/..."
+	$(CONTROLLER_GEN) crd paths="./api/..." output:crd:artifacts:config=config/crd/bases
+
+# verify-codegen regenerates in a temporary copy of the tree and compares, so it
+# never rewrites or deletes anything here. It is deliberately not a dependency
+# of build or run: checking the tree and changing it are separate contracts.
+.PHONY: verify-codegen
+verify-codegen: controller-gen ## Fail if the committed generated artifacts are stale. Does not touch the work tree.
+	CONTROLLER_GEN=$(CONTROLLER_GEN) ./hack/verify-codegen.sh
+
+# 'go test -run' exits 0 when its regex matches nothing, so the inventory gate
+# would vanish silently if the test were renamed. Assert it exists, then run the
+# whole package rather than a filtered subset. No pipe: SHELL sets pipefail, and
+# a reader that exits early would SIGPIPE 'go test' into a false failure.
+.PHONY: verify
+verify: verify-codegen ## Check the committed artifacts, then the inventory they are allowed to contain.
+	@listed="$$(go test ./api/... -list '^TestCRDInventory$$')"; \
+	case "$$listed" in \
+	*TestCRDInventory*) ;; \
+	*) echo "TestCRDInventory is missing: the CRD inventory gate is not running." >&2; exit 1 ;; \
+	esac
+	go test ./api/... -count=1
+
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...

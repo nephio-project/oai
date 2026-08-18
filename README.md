@@ -26,9 +26,12 @@ The directory structure of this repository is as follows: <br />
 ├── README.md
 ├── api
 │   └── v1alpha1
+│       ├── crd_manifests_test.go
+│       ├── doc.go
 │       ├── oai_ran_nf_types.go
 │       ├── plmn_types.go
-│       └── ranconfig_types.go
+│       ├── ranconfig_types.go
+│       └── zz_generated.deepcopy.go
 ├── cmd
 │   └── main.go
 ├── go.mod
